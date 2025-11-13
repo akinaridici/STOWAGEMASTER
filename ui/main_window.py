@@ -33,6 +33,42 @@ class MainWindow(QMainWindow):
         self.fixed_assignments: dict[str, TankAssignment] = {}  # Manual assignments that should be preserved
         
         self.init_ui()
+        
+        # Auto-load last profile if available
+        self.load_last_profile()
+    
+    def load_last_profile(self):
+        """Load the last used ship profile automatically"""
+        try:
+            last_profile_id = self.storage.load_last_profile_id()
+            if last_profile_id:
+                ship = self.storage.load_ship_profile(last_profile_id)
+                if ship:
+                    self.current_ship = ship
+                    # Reset excluded tanks when ship changes
+                    self.excluded_tanks.clear()
+                    # Show tanks in schematic if no plan exists
+                    if self.current_plan is None:
+                        from models.plan import StowagePlan
+                        empty_plan = StowagePlan(
+                            ship_name=self.current_ship.name,
+                            ship_profile_id=self.current_ship.id,
+                            cargo_requests=[]
+                        )
+                        self.display_tank_cards_in_panel(empty_plan, self.current_ship)
+                    self.update_optimize_button_state()
+                    # Update window title
+                    self.update_window_title()
+        except Exception as e:
+            # Silently continue if profile loading fails (corrupted or deleted file)
+            print(f"Error loading last profile: {e}")
+    
+    def update_window_title(self):
+        """Update window title with current ship name"""
+        if self.current_ship:
+            self.setWindowTitle(f"Tanker Stowage Plan - {self.current_ship.name} - Yükleme Planı")
+        else:
+            self.setWindowTitle("Tanker Stowage Plan - Yükleme Planı")
     
     def init_ui(self):
         """Initialize the user interface"""
@@ -242,6 +278,9 @@ class MainWindow(QMainWindow):
                     )
                     self.display_tank_cards_in_panel(empty_plan, self.current_ship)
                 self.update_optimize_button_state()
+                # Update window title and save last profile
+                self.update_window_title()
+                self.storage.save_last_profile_id(selected_ship.id)
     
     def manage_ship_profiles(self):
         """Open dialog to manage ship profiles"""
@@ -265,6 +304,9 @@ class MainWindow(QMainWindow):
                     )
                     self.display_tank_cards_in_panel(empty_plan, self.current_ship)
                 self.update_optimize_button_state()
+                # Update window title and save last profile
+                self.update_window_title()
+                self.storage.save_last_profile_id(selected_ship.id)
     
     def show_about(self):
         """Show about dialog"""
@@ -1014,6 +1056,10 @@ class MainWindow(QMainWindow):
                     # Update optimize button state after loading plan
                     self.update_optimize_button_state()
                     self.update_fill_100_button_state()
+                    
+                    # Update window title and save last profile
+                    self.update_window_title()
+                    self.storage.save_last_profile_id(self.current_ship.id)
                     
                     QMessageBox.information(
                         self,

@@ -1,6 +1,28 @@
 {
   "optimization_algorithm": "genetic",
   "min_utilization": 0.65,
+  "drag_drop_warning_threshold": 0.7,
+  "score_weights": {
+    "single_fit": 0.4,
+    "symmetry": 0.25,
+    "bow_stern": 0.15,
+    "best_fit": 0.2
+  },
+  "waste_utilization_weights": {
+    "waste": 0.7,
+    "utilization": 0.3
+  },
+  "exact_fit_threshold": 0.01,
+  "bow_stern_violation_threshold": 3,
+  "symmetric_pair_min_threshold": 0.65,
+  "faz1_single_tank_tolerance": 0.05,
+  "faz2_two_tank_tolerance": 0.05,
+  "faz2_asymmetric_tolerance_factor": 0.2,
+  "faz3_three_tank_tolerance": 0.04,
+  "faz4_four_tank_tolerance": 0.04,
+  "faz5_five_tank_tolerance": 0.04,
+  "mandatory_retry_increment": 0.01,
+  "mandatory_max_relaxation": 0.35,
   "ga_population_size": 1000,
   "ga_max_generations": 4000,
   "ga_crossover_rate": 0.9,
@@ -13,5 +35,6 @@
   "ga_operational_penalty_coef": 100.0,
   "ga_receiver_tolerance": 0.027999999999999997,
   "ga_convergence_threshold": 0.0001,
-  "ga_convergence_generations": 60
+  "ga_convergence_generations": 60,
+  "last_profile_id": "a62cfb23-9d8e-4fc3-a663-ddb68c791437"
 }

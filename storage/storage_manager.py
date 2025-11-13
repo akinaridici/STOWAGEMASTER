@@ -355,4 +355,39 @@ class StorageManager:
         except Exception as e:
             print(f"Error saving optimization settings: {e}")
             return False
+    
+    # Last Profile Tracking Methods
+    
+    def save_last_profile_id(self, ship_id: str) -> bool:
+        """Save the last loaded ship profile ID
+        
+        Args:
+            ship_id: ID of the ship profile to save as last loaded
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Load current settings
+            settings = self.load_optimization_settings()
+            # Add or update last_profile_id
+            settings['last_profile_id'] = ship_id
+            # Save settings
+            return self.save_optimization_settings(settings)
+        except Exception as e:
+            print(f"Error saving last profile ID: {e}")
+            return False
+    
+    def load_last_profile_id(self) -> Optional[str]:
+        """Load the last loaded ship profile ID
+        
+        Returns:
+            Ship profile ID if found, None otherwise
+        """
+        try:
+            settings = self.load_optimization_settings()
+            return settings.get('last_profile_id')
+        except Exception as e:
+            print(f"Error loading last profile ID: {e}")
+            return None
 
