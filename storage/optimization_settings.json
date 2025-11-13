@@ -36,5 +36,9 @@
   "ga_receiver_tolerance": 0.027999999999999997,
   "ga_convergence_threshold": 0.0001,
   "ga_convergence_generations": 60,
+  "recent_plans": [
+    "C:/Users/akina/OneDrive/Masaüstü/stwmaster_backup/master/storage/saved_plans/__VOY19_25.json",
+    "C:/Users/akina/OneDrive/Masaüstü/stwmaster_backup/master/storage/saved_plans/ORTAK locked.json"
+  ],
   "last_profile_id": "a62cfb23-9d8e-4fc3-a663-ddb68c791437"
 }

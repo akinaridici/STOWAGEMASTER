@@ -36,6 +36,9 @@ class MainWindow(QMainWindow):
         
         # Auto-load last profile if available
         self.load_last_profile()
+        
+        # Load recent plans menu after UI is fully initialized
+        self.update_recent_plans_menu()
     
     def load_last_profile(self):
         """Load the last used ship profile automatically"""
@@ -133,6 +136,13 @@ class MainWindow(QMainWindow):
         
         load_plan_action = file_menu.addAction('Plan Yükle', self.load_plan_from_archive)
         load_plan_action.setShortcut('Ctrl+O')
+        
+        # Recent plans submenu
+        self.recent_plans_menu = file_menu.addMenu('Son Açılan Planlar')
+        # Menu will be enabled/disabled by update_recent_plans_menu()
+        # Don't disable initially - let update_recent_plans_menu() handle it
+        
+        file_menu.addSeparator()
         
         save_plan_action = file_menu.addAction('Planı Kaydet', self.save_current_plan)
         save_plan_action.setShortcut('Ctrl+S')
@@ -1025,63 +1035,8 @@ class MainWindow(QMainWindow):
         )
         
         if file_path:
-            plan = self.storage.load_plan_from_file(file_path)
-            if plan:
-                self.current_plan = plan
-                # Load associated ship
-                self.current_ship = self.storage.load_ship_profile(plan.ship_profile_id)
-                if self.current_ship:
-                    # Load excluded tanks from plan
-                    if plan.excluded_tanks:
-                        self.excluded_tanks = set(plan.excluded_tanks)
-                    else:
-                        self.excluded_tanks.clear()
-                    # Clear fixed assignments and UNDO history when loading plan
-                    self.fixed_assignments.clear()
-                    self.last_tank_swap_state = None
-                    self.update_undo_menu_state()
-                    # Load cargo requests
-                    self.current_cargo_requests = plan.cargo_requests
-                    self.cargo_input_widget.set_cargo_list(self.current_cargo_requests)
-                    # Generate colors for cargo types
-                    cargo_colors = self._generate_colors(len(plan.cargo_requests)) if plan.cargo_requests else []
-                    # Display plan
-                    self.plan_viewer.display_plan(plan, self.current_ship, cargo_colors)
-                    self.display_tank_cards_in_panel(plan, self.current_ship)
-                    
-                    # Update LEGEND
-                    if hasattr(self, 'cargo_legend'):
-                        self.cargo_legend.set_cargo_list(plan.cargo_requests, cargo_colors, plan)
-                    
-                    # Update optimize button state after loading plan
-                    self.update_optimize_button_state()
-                    self.update_fill_100_button_state()
-                    
-                    # Update window title and save last profile
-                    self.update_window_title()
-                    self.storage.save_last_profile_id(self.current_ship.id)
-                    
-                    QMessageBox.information(
-                        self,
-                        "Plan Yüklendi",
-                        f"Plan '{plan.plan_name}' başarıyla yüklendi."
-                    )
-                else:
-                    # Update button state even if ship profile not found
-                    self.update_optimize_button_state()
-                    self.update_fill_100_button_state()
-                    QMessageBox.critical(
-                        self,
-                        "Hata",
-                        f"Plan ile ilişkili gemi profili bulunamadı: {plan.ship_profile_id}"
-                    )
-            else:
-                QMessageBox.critical(
-                    self,
-                    "Hata",
-                    "Plan dosyası yüklenirken bir hata oluştu.\n"
-                    "Dosya formatı geçersiz olabilir."
-                )
+            # Use the common load_plan_from_file method which handles history
+            self.load_plan_from_file(file_path)
     
     def display_tank_cards_in_panel(self, plan: StowagePlan, ship: Ship):
         """Display tank cards in ship schematic grid layout"""
@@ -1822,4 +1777,132 @@ class MainWindow(QMainWindow):
             "<b>Tanker Stowage Plan Uygulaması</b><br><br>"
             "Bu uygulama, tanker yükleme planlamasına yardımcı olmak üzere Akın Kaptan (akinkaptan77@hotmail.com) tarafından geliştirilmiştir."
         )
+    
+    def update_recent_plans_menu(self):
+        """Update the recent plans submenu with current history"""
+        try:
+            if not hasattr(self, 'recent_plans_menu'):
+                print("Warning: recent_plans_menu not found")
+                return
+            
+            # Clear existing actions
+            self.recent_plans_menu.clear()
+            
+            # Load recent plans
+            recent_plans = self.storage.load_recent_plans()
+            print(f"Debug: Found {len(recent_plans)} recent plans: {recent_plans}")
+            
+            if not recent_plans:
+                # No recent plans - disable menu
+                self.recent_plans_menu.setEnabled(False)
+                print("Debug: No recent plans, menu disabled")
+                return
+            
+            # Enable menu
+            self.recent_plans_menu.setEnabled(True)
+            print(f"Debug: Menu enabled, adding {len(recent_plans)} items")
+            
+            # Add actions for each recent plan
+            for plan_path in recent_plans:
+                # Get file name for display
+                from pathlib import Path
+                file_name = Path(plan_path).name
+                
+                # Create action - use a wrapper function to avoid closure issues
+                def make_load_handler(path):
+                    def handler():
+                        self.load_plan_from_file(path)
+                    return handler
+                
+                # Create action
+                action = self.recent_plans_menu.addAction(file_name)
+                # Store full path as data
+                action.setData(plan_path)
+                # Connect to load function using wrapper
+                action.triggered.connect(make_load_handler(plan_path))
+                # Ensure action is enabled
+                action.setEnabled(True)
+                print(f"Debug: Added menu item: {file_name} -> {plan_path}")
+            
+            # Force menu to update
+            self.recent_plans_menu.menuAction().setVisible(True)
+            print(f"Debug: Menu updated, {self.recent_plans_menu.actions().__len__()} actions")
+        except Exception as e:
+            print(f"Error updating recent plans menu: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def load_plan_from_file(self, file_path: str):
+        """Load a plan from a specific file path
+        
+        Args:
+            file_path: Full path to the plan file
+        """
+        if not file_path:
+            return
+        
+        plan = self.storage.load_plan_from_file(file_path)
+        if plan:
+            self.current_plan = plan
+            # Load associated ship
+            self.current_ship = self.storage.load_ship_profile(plan.ship_profile_id)
+            if self.current_ship:
+                # Load excluded tanks from plan
+                if plan.excluded_tanks:
+                    self.excluded_tanks = set(plan.excluded_tanks)
+                else:
+                    self.excluded_tanks.clear()
+                # Clear fixed assignments and UNDO history when loading plan
+                self.fixed_assignments.clear()
+                self.last_tank_swap_state = None
+                self.update_undo_menu_state()
+                # Load cargo requests
+                self.current_cargo_requests = plan.cargo_requests
+                self.cargo_input_widget.set_cargo_list(self.current_cargo_requests)
+                # Generate colors for cargo types
+                cargo_colors = self._generate_colors(len(plan.cargo_requests)) if plan.cargo_requests else []
+                # Display plan
+                self.plan_viewer.display_plan(plan, self.current_ship, cargo_colors)
+                self.display_tank_cards_in_panel(plan, self.current_ship)
+                
+                # Update LEGEND
+                if hasattr(self, 'cargo_legend'):
+                    self.cargo_legend.set_cargo_list(plan.cargo_requests, cargo_colors, plan)
+                
+                # Update optimize button state after loading plan
+                self.update_optimize_button_state()
+                self.update_fill_100_button_state()
+                
+                # Update window title and save last profile
+                self.update_window_title()
+                self.storage.save_last_profile_id(self.current_ship.id)
+                
+                # Save to recent plans history
+                self.storage.save_recent_plan(file_path)
+                # Update menu
+                self.update_recent_plans_menu()
+                
+                QMessageBox.information(
+                    self,
+                    "Plan Yüklendi",
+                    f"Plan '{plan.plan_name}' başarıyla yüklendi."
+                )
+            else:
+                # Update button state even if ship profile not found
+                self.update_optimize_button_state()
+                self.update_fill_100_button_state()
+                QMessageBox.critical(
+                    self,
+                    "Hata",
+                    f"Plan ile ilişkili gemi profili bulunamadı: {plan.ship_profile_id}"
+                )
+        else:
+            QMessageBox.critical(
+                self,
+                "Hata",
+                "Plan dosyası yüklenirken bir hata oluştu.\n"
+                "Dosya formatı geçersiz olabilir veya dosya bulunamadı."
+            )
+            # Update menu to remove invalid file
+            self.update_recent_plans_menu()
 

@@ -329,21 +329,38 @@ class StorageManager:
         """Load optimization settings from file, or return defaults"""
         try:
             if not self.settings_file.exists():
+                print("Debug load_optimization_settings: Settings file does not exist")
                 return self.get_default_settings()
             
             with open(self.settings_file, 'r', encoding='utf-8') as f:
                 settings = json.load(f)
+                print(f"Debug load_optimization_settings: Raw settings keys = {list(settings.keys())}")
+                print(f"Debug load_optimization_settings: Raw recent_plans = {settings.get('recent_plans', 'NOT FOUND')}")
+                
                 # Merge with defaults to ensure all keys exist (deep merge for nested dicts)
                 defaults = self.get_default_settings()
+                # Start with defaults, then update with settings
+                # This preserves keys that exist in settings but not in defaults (like recent_plans, last_profile_id)
+                merged = defaults.copy()
                 # Merge nested dictionaries properly
                 for key in defaults:
                     if key in settings and isinstance(defaults[key], dict) and isinstance(settings[key], dict):
-                        defaults[key].update(settings[key])
+                        merged[key] = defaults[key].copy()
+                        merged[key].update(settings[key])
                     elif key in settings:
-                        defaults[key] = settings[key]
-                return defaults
+                        merged[key] = settings[key]
+                # Add any keys from settings that are not in defaults (like recent_plans, last_profile_id)
+                for key in settings:
+                    if key not in defaults:
+                        merged[key] = settings[key]
+                
+                print(f"Debug load_optimization_settings: Merged settings keys = {list(merged.keys())}")
+                print(f"Debug load_optimization_settings: Merged recent_plans = {merged.get('recent_plans', 'NOT FOUND')}")
+                return merged
         except Exception as e:
             print(f"Error loading optimization settings: {e}")
+            import traceback
+            traceback.print_exc()
             return self.get_default_settings()
     
     def save_optimization_settings(self, settings: Dict) -> bool:
@@ -351,9 +368,16 @@ class StorageManager:
         try:
             with open(self.settings_file, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, indent=2, ensure_ascii=False)
+                f.flush()  # Ensure data is written to disk
+                import os
+                os.fsync(f.fileno())  # Force write to disk
+            print(f"Debug save_optimization_settings: Saved settings with keys = {list(settings.keys())}")
+            print(f"Debug save_optimization_settings: recent_plans = {settings.get('recent_plans', 'NOT FOUND')}")
             return True
         except Exception as e:
             print(f"Error saving optimization settings: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     # Last Profile Tracking Methods
@@ -390,4 +414,78 @@ class StorageManager:
         except Exception as e:
             print(f"Error loading last profile ID: {e}")
             return None
+    
+    # Recent Plans History Methods
+    
+    def save_recent_plan(self, file_path: str) -> bool:
+        """Save a recently opened plan file path to history
+        
+        Args:
+            file_path: Full path to the plan file that was opened
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            print(f"Debug: Saving recent plan: {file_path}")
+            # Load current settings
+            settings = self.load_optimization_settings()
+            
+            # Get current recent plans list
+            recent_plans = settings.get('recent_plans', [])
+            print(f"Debug: Current recent plans before save: {recent_plans}")
+            
+            # Remove the file_path if it already exists (to avoid duplicates)
+            if file_path in recent_plans:
+                recent_plans.remove(file_path)
+            
+            # Add to the beginning of the list
+            recent_plans.insert(0, file_path)
+            
+            # Keep only the last 5 plans
+            recent_plans = recent_plans[:5]
+            
+            # Update settings
+            settings['recent_plans'] = recent_plans
+            print(f"Debug: Updated recent plans: {recent_plans}")
+            
+            # Save settings
+            result = self.save_optimization_settings(settings)
+            print(f"Debug: Save result: {result}")
+            return result
+        except Exception as e:
+            print(f"Error saving recent plan: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def load_recent_plans(self) -> List[str]:
+        """Load the list of recently opened plan file paths
+        
+        Returns:
+            List of file paths (up to 5), most recent first
+        """
+        try:
+            settings = self.load_optimization_settings()
+            recent_plans = settings.get('recent_plans', [])
+            print(f"Debug load_recent_plans: settings keys = {list(settings.keys())}")
+            print(f"Debug load_recent_plans: recent_plans from settings = {recent_plans}")
+            
+            # Filter out non-existent files
+            valid_plans = []
+            for plan_path in recent_plans:
+                if Path(plan_path).exists():
+                    valid_plans.append(plan_path)
+            
+            # Update settings if some files were removed
+            if len(valid_plans) != len(recent_plans):
+                settings['recent_plans'] = valid_plans
+                self.save_optimization_settings(settings)
+            
+            return valid_plans
+        except Exception as e:
+            print(f"Error loading recent plans: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
 
