@@ -1,0 +1,98 @@
+{
+  "a62cfb23-9d8e-4fc3-a663-ddb68c791437": {
+    "id": "a62cfb23-9d8e-4fc3-a663-ddb68c791437",
+    "name": "Kuzey Ekim",
+    "tanks": [
+      {
+        "id": "8bbde574-2494-4392-9d93-5fde2dd1ab7a",
+        "name": "Cot1P",
+        "volume": 778.0
+      },
+      {
+        "id": "a1c82232-183a-4719-bd71-2e9039c350f2",
+        "name": "Cot1S",
+        "volume": 772.0
+      },
+      {
+        "id": "30777718-93a3-4442-a057-ae10108241cd",
+        "name": "Cot2P",
+        "volume": 1595.0
+      },
+      {
+        "id": "61db4a57-6bb2-445f-a3bd-efce2099feac",
+        "name": "Cot2S",
+        "volume": 1594.0
+      },
+      {
+        "id": "332b92be-44ff-4bf8-9de7-b3a85d3a2b82",
+        "name": "Cot3P",
+        "volume": 1347.0
+      },
+      {
+        "id": "e65cb923-febc-4b95-917c-373634654ca2",
+        "name": "Cot3S",
+        "volume": 1347.0
+      },
+      {
+        "id": "494f60d2-cacd-4047-be28-1f13f2d62526",
+        "name": "Cot4P",
+        "volume": 1348.0
+      },
+      {
+        "id": "119224b5-3018-4630-b482-4e797feccab9",
+        "name": "Cot4S",
+        "volume": 1348.0
+      },
+      {
+        "id": "f8e0fca6-60ed-4435-8e6b-7158db7a8172",
+        "name": "Cot5P",
+        "volume": 1347.0
+      },
+      {
+        "id": "56d9be33-ca00-46ce-b54c-e699f4977242",
+        "name": "Cot5S",
+        "volume": 1348.0
+      },
+      {
+        "id": "09336edc-db08-45ff-ae77-46d8247d8435",
+        "name": "Cot6P",
+        "volume": 1345.0
+      },
+      {
+        "id": "bbd83aba-d7b8-4273-9c84-52407b27c861",
+        "name": "Cot6S",
+        "volume": 1347.0
+      },
+      {
+        "id": "e374ed91-09b1-4b49-bf65-5ce763c77c1d",
+        "name": "Cot7P",
+        "volume": 1344.0
+      },
+      {
+        "id": "75bcdac1-ab39-4aa6-9645-aad339df292b",
+        "name": "Cot7S",
+        "volume": 1343.0
+      },
+      {
+        "id": "c0c8cca5-faea-45c0-bbfe-927f0f209f7d",
+        "name": "Cot8P",
+        "volume": 1270.0
+      },
+      {
+        "id": "ec882ff5-6c44-4161-b49c-a54fd6457793",
+        "name": "Cot8S",
+        "volume": 1270.0
+      },
+      {
+        "id": "46f853e5-e0fc-4e5a-9550-1c01375efb70",
+        "name": "Cot9P",
+        "volume": 360.0
+      },
+      {
+        "id": "37b63565-98b2-46f5-99f2-b4705053600e",
+        "name": "Cot9S",
+        "volume": 360.0
+      }
+    ]
+  }
+}

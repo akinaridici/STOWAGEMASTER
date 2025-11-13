@@ -1,0 +1,256 @@
+Tanker Stowage Plan Uygulaması - Kullanım Kılavuzu
+
+1. Uygulamanın Amacı
+
+Tanker Stowage Plan uygulaması, tanker gemilerinde çalışan kargo zabitlerine yükleme planlaması konusunda yardımcı olmak ve eğitim sağlamak amacıyla geliştirilmiş bir araçtır. Uygulama, yükleme taleplerini geminin tank kapasitelerine göre optimize ederek, simetri, trim ve operasyonel verimlilik açısından en uygun yükleme planını oluşturmanıza yardımcı olur.
+
+Uygulama, hem manuel (sürükle-bırak) hem de algoritmik (genetik algoritma veya gelişmiş FAZ algoritması) planlama yöntemlerini destekleyerek, kullanıcıların deneyimlerine göre en uygun çalışma yöntemini seçmelerine olanak tanır.
+
+Geliştirici Akın Kaptan tarafından kullanım ipuçları bu dökümanın sonunda verilmiştir.
+
+2. Kullanım Kılavuzu
+
+2.1. Gemi Profili Oluşturma ve Yükleme
+
+Uygulamayı kullanmaya başlamak için öncelikle bir gemi profili oluşturmanız veya mevcut bir profili yüklemeniz gerekir. Menüden "Gemi Profili" > "Gemi Profili Yönet" seçeneğini kullanarak:
+
+- Yeni gemi profili oluşturabilirsiniz
+- Mevcut profilleri düzenleyebilirsiniz
+- Profilleri kaydedip yükleyebilirsiniz
+
+NOT: Gemi profili oluşturuken tankların örneğin %98,7 hacmini girmeniz iyi olacaktır. Tam hacmi girerseniz tankları %100'e kadar doldurmaya çalışağı için sektörel kuralların dışına çıkarabilirsiniz.
+İhtiyacınıza, sektör kurallarına, şirketinizin talimatı veya kiracınızın istekleri doğrulsutunda geminizin tank hacimlerini gerçek değerinin uygun miktarda altında giriş yapmanız sizin sorumluluğunuzdadır. 
+
+
+Gemi profili oluştururken her tank için:
+- Tank adı girin (örn: Tank1, Tank2, vb.)
+- Tank kapasitesi girin (m³ cinsinden) (Tank kapasitesi girerken gerçek tank kapasitesinin %97.8'ini aşmayın)
+
+ÖNEMLİ: Tank kapasitesi girişlerinde, gerçek tank kapasitelerinin güvenlik marjı dikkate alınmalıdır. Örneğin, bir tankın gerçek kapasitesi 1000 m³ ise, güvenlik marjı için bu değerin yaklaşık %98.7'si (987 m³) gibi bir değer girilmesi önerilir. Bu, operasyonel güvenlik ve tank üst boşluğu (ullage) için gereklidir.
+
+2.2. Yükleme Talepleri Girişi
+
+"Yükleme Talepleri" bölümünden yüklenecek kargoları girebilirsiniz:
+
+- Yük Tipi: Kargo türünü belirtin (örn: Gasoil, MGO, vb.)
+- Ton: Yükün ağırlığını ton cinsinden girin
+- Density (ton/m³): Yükün yoğunluğunu girin (varsayılan: 0.85)
+- Alıcı(lar): Yükün alıcılarını virgülle ayırarak girin
+- Mutlak: Bu yükün mutlaka planlanması gerektiğini belirtmek için işaretleyin. Mutlak yükler ne olursa olsun miktarı azaltılmadan planlama yapılacak yüklerdir. 
+
+NOT: Uygulama yüklerin hacmini, metric ton air olarak verdiğiniz kütleyi Density'ye bölerek kendisi bulmaktadır. 
+
+Uygulama otomatik olarak hacmi (m³) hesaplayacaktır. İsterseniz hacmi doğrudan da girebilirsiniz.
+
+2.3. Planlama Yöntemleri
+
+Uygulama üç farklı planlama yöntemi sunar:
+
+2.3.1. Manuel Planlama (Sürükle-Bırak)
+
+- Sol üstteki Yük Legend bölümünden yükleri sürükleyerek tanklara bırakabilirsiniz
+- Tanklar arasında yükleri taşıyabilirsiniz (tanktan tanka sürükle-bırak)
+- Tanklara çift tıklayarak yük ataması yapabilir veya tankı boşaltabilirsiniz
+- Kontrol paneli sağ üstteki "%100 Yap" butonu ile yüklü tankları %100 kapasiteye getirebilirsiniz
+
+2.3.2. Algoritmik Planlama
+
+"Yükleme Planı Oluştur" butonuna tıklayarak tüm yükleri otomatik olarak planlayabilirsiniz. İki algoritma seçeneği vardır:
+
+- Genetik Algoritma (GA): Evrimsel optimizasyon yöntemi, büyük problemler için uygundur
+- Gelişmiş Algoritma (FAZ): 8 fazlı optimizasyon yöntemi, hızlı ve etkili sonuçlar verir
+
+2.3.3. Hibrit Planlama (Önerilen)
+
+En iyi sonuçlar için hibrit yaklaşım önerilir:
+
+1. Önce manuel olarak kritik tank atamalarınızı yapın (sürükle-bırak veya çift tıklama ile)
+2. "Kalan Yükleri Planla" butonuna tıklayın
+3. Uygulama, manuel atamalarınızı koruyarak kalan yükleri otomatik olarak planlayacaktır
+4. İsterseniz bu işlemi tekrar tekrar yaparak farklı sonuçlar deneyebilirsiniz
+
+Not: Manuel atamalar yapıldıktan sonra tanklar kilitlenir (🔒 ikonu görünür) ve algoritma bu tankları kullanmaz.
+
+2.4. Plan Kaydetme ve Yükleme
+
+- "Dosya > Planı Kaydet" ile mevcut planı JSON formatında kaydedebilirsiniz
+- "Dosya > Plan Yükle" ile daha önce kaydedilmiş planları yükleyebilirsiniz
+- Planlar, gemi profili, yükleme talepleri, tank atamaları ve planlama dışı bırakılan tankları içerir
+
+2.5. Plan Dışı Tanklar
+
+Tanklara sağ tıklayarak "Planlamaya Dahil Etme" seçeneği ile belirli tankları planlamadan çıkarabilirsiniz. Bu tanklar algoritma tarafından kullanılmaz ve plan kaydedildiğinde bu bilgi korunur.
+
+2.6. Plan Görüntüleme
+
+Alt paneldeki "Yükleme Planı" bölümünde:
+- Her yük tipi için sipariş miktarı ve yüklenen miktar karşılaştırması
+- Fark ve durum bilgileri
+- Toplam kapasite, yüklenen miktar, kullanım oranı ve talep karşılama yüzdesi görüntülenir
+
+3. Optimizasyon Ayarları ve Tavsiyeler
+
+3.1. Hibrit Planlama Yaklaşımı (En İyi Sonuçlar İçin)
+
+Uygulamanın en güçlü özelliği hibrit planlama yaklaşımıdır. Bu yaklaşımda:
+
+1. Manuel Ön Atamalar: Deneyimli zabitler, geminin özelliklerine ve operasyonel gereksinimlere göre kritik tank atamalarını manuel olarak yaparlar
+2. Algoritmik Tamamlama: Kalan yükler ve boş tanklar için algoritma devreye girer
+3. İteratif İyileştirme: Kullanıcı, algoritma sonuçlarını gözden geçirip gerekirse tekrar planlama yapabilir
+
+Bu yaklaşım, uzman bilgisi ile algoritmik optimizasyonun birleşimi sayesinde mükemmele yakın sonuçlar verir.
+
+3.2. Optimizasyon Algoritması Seçimi
+
+"Menü > Ayarlar > Optimizasyon Ayarları" bölümünden algoritma seçebilirsiniz:
+
+- Genetik Algoritma (GA): 
+  - Büyük ve karmaşık problemler için idealdir
+  - Daha uzun sürebilir ancak daha iyi sonuçlar verebilir
+  - Popülasyon boyutu, nesil sayısı gibi parametreler ayarlanabilir
+
+- Gelişmiş Algoritma (FAZ):
+  - Hızlı sonuçlar verir
+  - 8 fazlı optimizasyon yöntemi kullanır
+  - Orta büyüklükteki problemler için idealdir
+
+3.3. Genetik Algoritma Parametreleri
+
+GA kullanırken ayarlayabileceğiniz önemli parametreler:
+
+- Popülasyon Boyutu: Daha büyük popülasyon daha iyi sonuçlar verebilir ancak daha uzun sürer (varsayılan: 500)
+- Maksimum Nesil Sayısı: Algoritmanın çalışacağı maksimum iterasyon sayısı (varsayılan: 2000)
+- Çaprazlama Oranı: Yeni çözümlerin oluşturulma şekli (varsayılan: 0.90)
+- Mutasyon Oranı: Çeşitlilik için mutasyon olasılığı (varsayılan: 0.11)
+- Alıcı Yük Bütünlüğü Toleransı: Alıcılar için kabul edilebilir sapma yüzdesi (varsayılan: %3)
+
+3.4. Tank Minimum Yükleme
+
+Tankların minimum yüzde kaç dolu olması gerektiğini belirleyebilirsiniz (varsayılan: %65). Bu değer, operasyonel gereksinimlerinize göre ayarlanabilir.
+
+3.5. Tavsiyeler
+
+- Hibrit yaklaşımı tercih edin: Önce manuel atamalar yapın, sonra algoritmayı kullanın
+- Planlama dışı tankları kullanın: Boş bırakmak istediğiniz tankları planlamadan çıkarın
+- Mutlak yükleri işaretleyin: Kesinlikle planlanması gereken yükleri "Mutlak" olarak işaretleyin
+- Farklı algoritmaları deneyin: Aynı problem için farklı algoritmalar farklı sonuçlar verebilir
+- İteratif planlama yapın: "Kalan Yükleri Planla" butonunu birden fazla kez kullanarak farklı çözümler deneyin
+
+4. Sorumluluk Reddi ve Önemli Uyarılar
+
+4.1. Kullanıcı Sorumluluğu
+
+BU UYGULAMA BİR YARDIMCI ARAÇTIR. Uygulamanın kullanımından kaynaklanan her türlü sonuçtan kullanıcı sorumludur. Uygulama tarafından oluşturulan planlar, yalnızca öneri niteliğindedir ve gerçek yükleme operasyonları için mutlaka uzman bir kargo zabiti tarafından gözden geçirilmeli ve onaylanmalıdır.
+
+4.2. Uzman Zabit Planlaması Esastır
+
+Gerçek yükleme planlaması, deneyimli ve sertifikalı kargo zabitleri tarafından yapılmalıdır. Bu uygulama:
+- Yardımcı bir araçtır: Planlama sürecini hızlandırmak ve optimize etmek için kullanılabilir
+- Eğitim aracıdır: Yeni zabitlerin planlama prensiplerini öğrenmesine yardımcı olabilir
+- Kontrol aracıdır: Mevcut planların doğruluğunu kontrol etmek için kullanılabilir
+
+Ancak asla uzman zabit planlamasının yerini tutmaz.
+
+4.3. Operasyonel Güvenlik
+
+- Uygulama tarafından önerilen planlar, geminin gerçek durumu, hava koşulları, liman düzenlemeleri ve diğer operasyonel faktörleri dikkate almaz
+- Tüm planlar, gerçek operasyon öncesi mutlaka uzman kontrolünden geçmelidir
+- Tank kapasiteleri, güvenlik marjları ve operasyonel kısıtlamalar manuel olarak kontrol edilmelidir
+
+4.4. Veri Doğruluğu
+
+Kullanıcı, girdiği tüm verilerin (gemi profili, tank kapasiteleri, yükleme talepleri) doğruluğundan sorumludur. Yanlış veri girişi, hatalı planlama sonuçlarına yol açabilir.
+
+5. Geliştirici Bilgisi ve Lisans
+
+5.1. Geliştirici
+
+Bu uygulama, Akın Kaptan tarafından tanker zabitlerine yardımcı ve eğitici bir araç olarak geliştirilmiştir.
+
+İletişim: akinkaptan77@hotmail.com
+
+5.2. Lisans
+
+Bu uygulama Freeware (Ücretsiz Yazılım) dır. Uygulama, eğitim ve yardımcı araç amacıyla ücretsiz olarak kullanılabilir.
+
+----
+
+GELİŞTİRİCİ'DEN İPUÇLARI
+
+- En başarılı yaklaşım hibrit yaklaşımdır. Sürükle-bırak yöntemiyle planlamanın size kolay gelen yerlerini manuel olarak halledip gerisini uygulamaya yaptırabilirsiniz.
+
+- Siz kendi planlamanızın dikte ettiği tankları sürükle bırak ile planlayın, gerisini programa yaptırın.
+
+- Sadece sizin bilebileceğiniz durumlar olabilir. Örneğin bir tank SLOP olarak kullanılıyr ve yük alımıyor olabilir. Planlamaya başlamadan önce o tank henüz boş görünüyorken sağ tıklayarak o tankı planlama dışı bırakma seçeneğini işaretleyin. 
+
+- Defalarca denemenize rağmen uygulama bir parseli bir türlü tam yerleştiremiyorsa o perseli siz el ile planlayıp gerisini uygulamaya planlattırabilirsiniz.
+
+- Kullandığınız bilgisayar güçlü ise Optimizasyon Parametrelerinden Popülasyon Boyutu ve Maximum Nesil Sayısını 2,3,4 kata, hatta 5 kata kadar arttırabilrisiniz. Bilgisayarınızın performansı ve sizin sabrınız arasında ilişki kurarak kendi optimum değerlerinizi bulablirsiniz.
+
+- Hangi parametrenin ne işe yaradığını aşağıda özetliyorum:
+
+
+------------------------------------------------------------------------
+Genetik Algoritma Parametreleri
+1. Popülasyon Boyutu (ga_population_size)
+•	Ne işe yarar: Her nesildeki çözüm sayısı.
+•	Etkisi: Yüksek değerler daha iyi çözüm potansiyeli sağlar, ancak hesaplama süresini artırır.
+•	Varsayılan: 100-300
+2. Maksimum Nesil Sayısı (ga_max_generations)
+•	Ne işe yarar: Algoritmanın çalışacağı maksimum nesil sayısı.
+•	Etkisi: Yüksek değerler daha uzun arama süresi, daha iyi sonuç potansiyeli.
+•	Varsayılan: 500-1000
+3. Çaprazlama Oranı (ga_crossover_rate)
+•	Ne işe yarar: İki ebeveyn çözümün genlerini birleştirme olasılığı (0.0-1.0).
+•	Etkisi: Yüksek değerler (0.7-0.9) iyi özelliklerin birleşmesini artırır.
+•	Varsayılan: 0.8
+4. Mutasyon Oranı (ga_mutation_rate)
+•	Ne işe yarar: Çözümlerde rastgele değişiklik yapma olasılığı (0.0-1.0).
+•	Etkisi: Düşük değerler (0.05-0.15) yerel optimumdan kaçışa yardımcı olur; çok yüksek değerler rastgele aramaya dönüştürür.
+•	Varsayılan: 0.1
+5. Turnuva Boyutu (ga_tournament_size)
+•	Ne işe yarar: Turnuva seçiminde karşılaştırılan birey sayısı.
+•	Etkisi: Yüksek değerler en iyilerin seçilme şansını artırır; düşük değerler çeşitliliği korur.
+•	Varsayılan: 3
+6. Elitizm Kullan (ga_use_elitism)
+•	Ne işe yarar: En iyi çözümlerin bir sonraki nesle doğrudan aktarılması.
+•	Etkisi: En iyi çözümlerin kaybolmasını önler, yakınsamayı hızlandırır.
+•	Varsayılan: True
+7. Elitizm Sayısı (ga_elitism_count)
+•	Ne işe yarar: Bir sonraki nesle aktarılacak en iyi çözüm sayısı.
+•	Etkisi: Yüksek değerler en iyileri korur, ancak çeşitliliği azaltabilir.
+•	Varsayılan: 5-10
+Cezalandırma Katsayıları
+8. Simetri Cezası Katsayısı (ga_symmetry_penalty_coef)
+•	Ne işe yarar: Geminin yan dengesizliğine (port/starboard) verilen ceza ağırlığı.
+•	Etkisi: Yüksek değerler simetrik dağılımı zorlar; düşük değerler daha esnek olur.
+•	Varsayılan: 1000-2000
+9. Trim Cezası Katsayısı (ga_trim_penalty_coef)
+•	Ne işe yarar: Boyuna dengesizliğe (ön/arka) verilen ceza ağırlığı.
+•	Etkisi: Yüksek değerler LCG’nin ideal konuma yakın olmasını sağlar.
+•	Varsayılan: 500-1000
+10. Operasyonel Cezası Katsayısı (ga_operational_penalty_coef)
+•	Ne işe yarar: Bir alıcının çok fazla tank kullanmasına verilen ceza ağırlığı.
+•	Etkisi: Yüksek değerler daha az tank kullanımını teşvik eder (operasyonel verimlilik).
+•	Varsayılan: 100
+11. Alıcı Yük Bütünlüğü Toleransı (ga_receiver_tolerance)
+•	Ne işe yarar: Bir alıcıya yüklenen miktarın istenen miktardan sapma oranı (0-50%).
+•	Etkisi: Yüksek tolerans daha esnek yükleme sağlar; düşük tolerans daha hassas yükleme gerektirir.
+•	Varsayılan: %0.4-5
+Yakınsama Parametreleri
+12. Yakınsama Eşiği (ga_convergence_threshold)
+•	Ne işe yarar: Algoritmanın durması için gereken iyileşme miktarı (0.0-1.0).
+•	Etkisi: Düşük değerler daha uzun çalışma, daha iyi sonuç potansiyeli.
+•	Varsayılan: 0.0009-0.001
+13. Yakınsama Nesil Sayısı (ga_convergence_generations)
+•	Ne işe yarar: Yakınsama kontrolü için bakılan son nesil sayısı.
+•	Etkisi: Yüksek değerler erken durmayı azaltır; düşük değerler daha erken durma riski.
+•	Varsayılan: 50
+Bu parametreler genetik algoritmanın davranışını kontrol eder. Genel kural: daha yüksek popülasyon ve nesil sayıları daha iyi sonuç verebilir, ancak hesaplama süresini artırır. Cezalandırma katsayıları ise optimizasyonun hangi kriterlere öncelik vereceğini belirler.
+---------------------------------------------------
+
+
+
+
+Son Güncelleme: 2025
+Versiyon: 1.1

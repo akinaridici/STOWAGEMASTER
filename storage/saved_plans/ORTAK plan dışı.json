@@ -1,0 +1,392 @@
+{
+  "id": "a80ff727-78b1-4876-aeda-7d0a538f53b6",
+  "plan_name": "Genetik Algoritma Planı",
+  "ship_name": "Kuzey Ekim",
+  "ship_profile_id": "a62cfb23-9d8e-4fc3-a663-ddb68c791437",
+  "created_date": "2025-11-07T03:10:11.370586",
+  "notes": null,
+  "cargo_requests": [
+    {
+      "unique_id": "d2a0b553-38bf-4eb7-bf89-e17007c5ae4e",
+      "cargo_type": "DAP-5 KB-95",
+      "quantity": 1325.6756756756756,
+      "receivers": [
+        {
+          "name": "ANTALYA-OPET"
+        }
+      ],
+      "is_mandatory": false,
+      "ton": 981.0,
+      "density": 0.74
+    },
+    {
+      "unique_id": "7439f6b8-a87c-4283-81bd-d8997d619eab",
+      "cargo_type": "DAP-4 KB-95",
+      "quantity": 1567.5675675675675,
+      "receivers": [
+        {
+          "name": "ANTALYA POAŞ"
+        }
+      ],
+      "is_mandatory": false,
+      "ton": 1160.0,
+      "density": 0.74
+    },
+    {
+      "unique_id": "06b8f470-c4b2-4bcd-a99d-9ad459aa7815",
+      "cargo_type": "DAP-6 MOTORİN",
+      "quantity": 1575.7211538461538,
+      "receivers": [
+        {
+          "name": "ANTALYA OPET"
+        }
+      ],
+      "is_mandatory": false,
+      "ton": 1311.0,
+      "density": 0.832
+    },
+    {
+      "unique_id": "aa8710b3-1946-4512-99cb-e8bd49c0c1f2",
+      "cargo_type": "DAP-2 KB-95",
+      "quantity": 2086.4864864864867,
+      "receivers": [
+        {
+          "name": "MERSİN-POAŞ"
+        }
+      ],
+      "is_mandatory": false,
+      "ton": 1544.0,
+      "density": 0.74
+    },
+    {
+      "unique_id": "c45b11cf-0c49-4254-b0bf-f70d7cee7cb2",
+      "cargo_type": "DAP-1 KB-95",
+      "quantity": 4256.756756756757,
+      "receivers": [
+        {
+          "name": "MERSİN-OPET"
+        }
+      ],
+      "is_mandatory": false,
+      "ton": 3150.0,
+      "density": 0.74
+    },
+    {
+      "unique_id": "cb72a529-076d-4b62-911a-afa0f2ff3a14",
+      "cargo_type": "İKMAL-1 KB-95",
+      "quantity": 4733.783783783784,
+      "receivers": [
+        {
+          "name": "MERSİN-TÜPRAŞ"
+        }
+      ],
+      "is_mandatory": false,
+      "ton": 3503.0,
+      "density": 0.74
+    },
+    {
+      "unique_id": "c163cbbe-0391-4d3d-bbfc-b7c7cf085636",
+      "cargo_type": "DAP-3 KB-95",
+      "quantity": 5221.621621621622,
+      "receivers": [
+        {
+          "name": "MERSİN SHELL"
+        }
+      ],
+      "is_mandatory": false,
+      "ton": 3864.0,
+      "density": 0.74
+    }
+  ],
+  "assignments": {
+    "8bbde574-2494-4392-9d93-5fde2dd1ab7a": {
+      "tank_id": "8bbde574-2494-4392-9d93-5fde2dd1ab7a",
+      "cargo": {
+        "unique_id": "7439f6b8-a87c-4283-81bd-d8997d619eab",
+        "cargo_type": "DAP-4 KB-95",
+        "quantity": 1567.5675675675675,
+        "receivers": [
+          {
+            "name": "ANTALYA POAŞ"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 1160.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 778.0
+    },
+    "a1c82232-183a-4719-bd71-2e9039c350f2": {
+      "tank_id": "a1c82232-183a-4719-bd71-2e9039c350f2",
+      "cargo": {
+        "unique_id": "7439f6b8-a87c-4283-81bd-d8997d619eab",
+        "cargo_type": "DAP-4 KB-95",
+        "quantity": 1567.5675675675675,
+        "receivers": [
+          {
+            "name": "ANTALYA POAŞ"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 1160.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 772.0
+    },
+    "30777718-93a3-4442-a057-ae10108241cd": {
+      "tank_id": "30777718-93a3-4442-a057-ae10108241cd",
+      "cargo": {
+        "unique_id": "c45b11cf-0c49-4254-b0bf-f70d7cee7cb2",
+        "cargo_type": "DAP-1 KB-95",
+        "quantity": 4256.756756756757,
+        "receivers": [
+          {
+            "name": "MERSİN-OPET"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3150.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1595.0
+    },
+    "61db4a57-6bb2-445f-a3bd-efce2099feac": {
+      "tank_id": "61db4a57-6bb2-445f-a3bd-efce2099feac",
+      "cargo": {
+        "unique_id": "cb72a529-076d-4b62-911a-afa0f2ff3a14",
+        "cargo_type": "İKMAL-1 KB-95",
+        "quantity": 4733.783783783784,
+        "receivers": [
+          {
+            "name": "MERSİN-TÜPRAŞ"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3503.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1594.0
+    },
+    "332b92be-44ff-4bf8-9de7-b3a85d3a2b82": {
+      "tank_id": "332b92be-44ff-4bf8-9de7-b3a85d3a2b82",
+      "cargo": {
+        "unique_id": "c163cbbe-0391-4d3d-bbfc-b7c7cf085636",
+        "cargo_type": "DAP-3 KB-95",
+        "quantity": 5221.621621621622,
+        "receivers": [
+          {
+            "name": "MERSİN SHELL"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3864.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1347.0
+    },
+    "e65cb923-febc-4b95-917c-373634654ca2": {
+      "tank_id": "e65cb923-febc-4b95-917c-373634654ca2",
+      "cargo": {
+        "unique_id": "c163cbbe-0391-4d3d-bbfc-b7c7cf085636",
+        "cargo_type": "DAP-3 KB-95",
+        "quantity": 5221.621621621622,
+        "receivers": [
+          {
+            "name": "MERSİN SHELL"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3864.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1347.0
+    },
+    "494f60d2-cacd-4047-be28-1f13f2d62526": {
+      "tank_id": "494f60d2-cacd-4047-be28-1f13f2d62526",
+      "cargo": {
+        "unique_id": "cb72a529-076d-4b62-911a-afa0f2ff3a14",
+        "cargo_type": "İKMAL-1 KB-95",
+        "quantity": 4733.783783783784,
+        "receivers": [
+          {
+            "name": "MERSİN-TÜPRAŞ"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3503.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1348.0
+    },
+    "119224b5-3018-4630-b482-4e797feccab9": {
+      "tank_id": "119224b5-3018-4630-b482-4e797feccab9",
+      "cargo": {
+        "unique_id": "c45b11cf-0c49-4254-b0bf-f70d7cee7cb2",
+        "cargo_type": "DAP-1 KB-95",
+        "quantity": 4256.756756756757,
+        "receivers": [
+          {
+            "name": "MERSİN-OPET"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3150.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1348.0
+    },
+    "f8e0fca6-60ed-4435-8e6b-7158db7a8172": {
+      "tank_id": "f8e0fca6-60ed-4435-8e6b-7158db7a8172",
+      "cargo": {
+        "unique_id": "c163cbbe-0391-4d3d-bbfc-b7c7cf085636",
+        "cargo_type": "DAP-3 KB-95",
+        "quantity": 5221.621621621622,
+        "receivers": [
+          {
+            "name": "MERSİN SHELL"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3864.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1347.0
+    },
+    "56d9be33-ca00-46ce-b54c-e699f4977242": {
+      "tank_id": "56d9be33-ca00-46ce-b54c-e699f4977242",
+      "cargo": {
+        "unique_id": "cb72a529-076d-4b62-911a-afa0f2ff3a14",
+        "cargo_type": "İKMAL-1 KB-95",
+        "quantity": 4733.783783783784,
+        "receivers": [
+          {
+            "name": "MERSİN-TÜPRAŞ"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3503.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1348.0
+    },
+    "09336edc-db08-45ff-ae77-46d8247d8435": {
+      "tank_id": "09336edc-db08-45ff-ae77-46d8247d8435",
+      "cargo": {
+        "unique_id": "c45b11cf-0c49-4254-b0bf-f70d7cee7cb2",
+        "cargo_type": "DAP-1 KB-95",
+        "quantity": 4256.756756756757,
+        "receivers": [
+          {
+            "name": "MERSİN-OPET"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3150.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1345.0
+    },
+    "bbd83aba-d7b8-4273-9c84-52407b27c861": {
+      "tank_id": "bbd83aba-d7b8-4273-9c84-52407b27c861",
+      "cargo": {
+        "unique_id": "d2a0b553-38bf-4eb7-bf89-e17007c5ae4e",
+        "cargo_type": "DAP-5 KB-95",
+        "quantity": 1325.6756756756756,
+        "receivers": [
+          {
+            "name": "ANTALYA-OPET"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 981.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1347.0
+    },
+    "e374ed91-09b1-4b49-bf65-5ce763c77c1d": {
+      "tank_id": "e374ed91-09b1-4b49-bf65-5ce763c77c1d",
+      "cargo": {
+        "unique_id": "06b8f470-c4b2-4bcd-a99d-9ad459aa7815",
+        "cargo_type": "DAP-6 MOTORİN",
+        "quantity": 1575.7211538461538,
+        "receivers": [
+          {
+            "name": "ANTALYA OPET"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 1311.0,
+        "density": 0.832
+      },
+      "quantity_loaded": 1344.0
+    },
+    "75bcdac1-ab39-4aa6-9645-aad339df292b": {
+      "tank_id": "75bcdac1-ab39-4aa6-9645-aad339df292b",
+      "cargo": {
+        "unique_id": "aa8710b3-1946-4512-99cb-e8bd49c0c1f2",
+        "cargo_type": "DAP-2 KB-95",
+        "quantity": 2086.4864864864867,
+        "receivers": [
+          {
+            "name": "MERSİN-POAŞ"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 1544.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1270.0
+    },
+    "c0c8cca5-faea-45c0-bbfe-927f0f209f7d": {
+      "tank_id": "c0c8cca5-faea-45c0-bbfe-927f0f209f7d",
+      "cargo": {
+        "unique_id": "aa8710b3-1946-4512-99cb-e8bd49c0c1f2",
+        "cargo_type": "DAP-2 KB-95",
+        "quantity": 2086.4864864864867,
+        "receivers": [
+          {
+            "name": "MERSİN-POAŞ"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 1544.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 879.0810810810813
+    },
+    "ec882ff5-6c44-4161-b49c-a54fd6457793": {
+      "tank_id": "ec882ff5-6c44-4161-b49c-a54fd6457793",
+      "cargo": {
+        "unique_id": "c163cbbe-0391-4d3d-bbfc-b7c7cf085636",
+        "cargo_type": "DAP-3 KB-95",
+        "quantity": 5221.621621621622,
+        "receivers": [
+          {
+            "name": "MERSİN SHELL"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 3864.0,
+        "density": 0.74
+      },
+      "quantity_loaded": 1270.0
+    },
+    "37b63565-98b2-46f5-99f2-b4705053600e": {
+      "tank_id": "37b63565-98b2-46f5-99f2-b4705053600e",
+      "cargo": {
+        "unique_id": "06b8f470-c4b2-4bcd-a99d-9ad459aa7815",
+        "cargo_type": "DAP-6 MOTORİN",
+        "quantity": 1575.7211538461538,
+        "receivers": [
+          {
+            "name": "ANTALYA OPET"
+          }
+        ],
+        "is_mandatory": false,
+        "ton": 1311.0,
+        "density": 0.832
+      },
+      "quantity_loaded": 278.99278846153857
+    }
+  }
+}

@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+*.exe
+*.spec
+*.bat
+*.ico
+
+# Storage files (eğer bunları da eklemek istemiyorsanız)
+# storage/*.json
+# storage/saved_plans/*.json

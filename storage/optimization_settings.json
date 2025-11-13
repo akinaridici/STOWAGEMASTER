@@ -1,0 +1,17 @@
+{
+  "optimization_algorithm": "genetic",
+  "min_utilization": 0.65,
+  "ga_population_size": 1000,
+  "ga_max_generations": 4000,
+  "ga_crossover_rate": 0.9,
+  "ga_mutation_rate": 0.11,
+  "ga_tournament_size": 3,
+  "ga_use_elitism": true,
+  "ga_elitism_count": 5,
+  "ga_symmetry_penalty_coef": 3000.0,
+  "ga_trim_penalty_coef": 1500.0,
+  "ga_operational_penalty_coef": 100.0,
+  "ga_receiver_tolerance": 0.027999999999999997,
+  "ga_convergence_threshold": 0.0001,
+  "ga_convergence_generations": 60
+}
