@@ -1782,7 +1782,6 @@ class MainWindow(QMainWindow):
         """Update the recent plans submenu with current history"""
         try:
             if not hasattr(self, 'recent_plans_menu'):
-                print("Warning: recent_plans_menu not found")
                 return
             
             # Clear existing actions
@@ -1790,17 +1789,14 @@ class MainWindow(QMainWindow):
             
             # Load recent plans
             recent_plans = self.storage.load_recent_plans()
-            print(f"Debug: Found {len(recent_plans)} recent plans: {recent_plans}")
             
             if not recent_plans:
                 # No recent plans - disable menu
                 self.recent_plans_menu.setEnabled(False)
-                print("Debug: No recent plans, menu disabled")
                 return
             
             # Enable menu
             self.recent_plans_menu.setEnabled(True)
-            print(f"Debug: Menu enabled, adding {len(recent_plans)} items")
             
             # Add actions for each recent plan
             for plan_path in recent_plans:
@@ -1822,15 +1818,11 @@ class MainWindow(QMainWindow):
                 action.triggered.connect(make_load_handler(plan_path))
                 # Ensure action is enabled
                 action.setEnabled(True)
-                print(f"Debug: Added menu item: {file_name} -> {plan_path}")
             
             # Force menu to update
             self.recent_plans_menu.menuAction().setVisible(True)
-            print(f"Debug: Menu updated, {self.recent_plans_menu.actions().__len__()} actions")
         except Exception as e:
             print(f"Error updating recent plans menu: {e}")
-            import traceback
-            traceback.print_exc()
     
     def load_plan_from_file(self, file_path: str):
         """Load a plan from a specific file path
