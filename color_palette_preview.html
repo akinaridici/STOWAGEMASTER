@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargo Renk Paleti Önizleme</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .color-group {
+            margin-bottom: 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fafafa;
+        }
+        .color-group h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 24px;
+        }
+        .color-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .color-box {
+            flex: 1;
+            min-width: 150px;
+            height: 120px;
+            border-radius: 8px;
+            border: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .color-box:hover {
+            transform: scale(1.05);
+        }
+        .color-box .hex {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .color-box .ton-label {
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Cargo Renk Paleti - Önizleme</h1>
+        
+        <div class="info">
+            <strong>Bilgi:</strong> Her renk için 5 ton mevcuttur. Ton 1 = Ana renk (en koyu), Ton 5 = En açık ton.
+        </div>
+
+        <!-- Kırmızı -->
+        <div class="color-group">
+            <h2>🔴 Kırmızı (Red)</h2>
+            <div class="color-row">
+                <div class="color-box" style="background-color: #CC0000;">
+                    <div class="ton-label">Ton 1 (Ana)</div>
+                    <div class="hex">#CC0000</div>
+                </div>
+                <div class="color-box" style="background-color: #FF1A21;">
+                    <div class="ton-label">Ton 2</div>
+                    <div class="hex">#FF1A21</div>
+                </div>
+                <div class="color-box" style="background-color: #FF4D54;">
+                    <div class="ton-label">Ton 3</div>
+                    <div class="hex">#FF4D54</div>
+                </div>
+                <div class="color-box" style="background-color: #FF8087;">
+                    <div class="ton-label">Ton 4</div>
+                    <div class="hex">#FF8087</div>
+                </div>
+                <div class="color-box" style="background-color: #FFB3BA;">
+                    <div class="ton-label">Ton 5 (Açık)</div>
+                    <div class="hex">#FFB3BA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mavi -->
+        <div class="color-group">
+            <h2>🔵 Mavi (Blue)</h2>
+            <div class="color-row">
+                <div class="color-box" style="background-color: #0066CC;">
+                    <div class="ton-label">Ton 1 (Ana)</div>
+                    <div class="hex">#0066CC</div>
+                </div>
+                <div class="color-box" style="background-color: #1A8CFF;">
+                    <div class="ton-label">Ton 2</div>
+                    <div class="hex">#1A8CFF</div>
+                </div>
+                <div class="color-box" style="background-color: #4DA6FF;">
+                    <div class="ton-label">Ton 3</div>
+                    <div class="hex">#4DA6FF</div>
+                </div>
+                <div class="color-box" style="background-color: #80C0FF;">
+                    <div class="ton-label">Ton 4</div>
+                    <div class="hex">#80C0FF</div>
+                </div>
+                <div class="color-box" style="background-color: #B3D9FF;">
+                    <div class="ton-label">Ton 5 (Açık)</div>
+                    <div class="hex">#B3D9FF</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Koyu Gri -->
+        <div class="color-group">
+            <h2>⚫ Koyu Gri (Dark Gray)</h2>
+            <div class="color-row">
+                <div class="color-box" style="background-color: #2C2C2C;">
+                    <div class="ton-label">Ton 1 (Ana)</div>
+                    <div class="hex">#2C2C2C</div>
+                </div>
+                <div class="color-box" style="background-color: #555555;">
+                    <div class="ton-label">Ton 2</div>
+                    <div class="hex">#555555</div>
+                </div>
+                <div class="color-box" style="background-color: #808080;">
+                    <div class="ton-label">Ton 3</div>
+                    <div class="hex">#808080</div>
+                </div>
+                <div class="color-box" style="background-color: #A9A9A9;">
+                    <div class="ton-label">Ton 4</div>
+                    <div class="hex">#A9A9A9</div>
+                </div>
+                <div class="color-box" style="background-color: #D3D3D3;">
+                    <div class="ton-label">Ton 5 (Açık)</div>
+                    <div class="hex">#D3D3D3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yeşil -->
+        <div class="color-group">
+            <h2>🟢 Yeşil (Green)</h2>
+            <div class="color-row">
+                <div class="color-box" style="background-color: #00CC00;">
+                    <div class="ton-label">Ton 1 (Ana)</div>
+                    <div class="hex">#00CC00</div>
+                </div>
+                <div class="color-box" style="background-color: #1AFF1A;">
+                    <div class="ton-label">Ton 2</div>
+                    <div class="hex">#1AFF1A</div>
+                </div>
+                <div class="color-box" style="background-color: #4DFF4D;">
+                    <div class="ton-label">Ton 3</div>
+                    <div class="hex">#4DFF4D</div>
+                </div>
+                <div class="color-box" style="background-color: #80FF80;">
+                    <div class="ton-label">Ton 4</div>
+                    <div class="hex">#80FF80</div>
+                </div>
+                <div class="color-box" style="background-color: #B3FFB3;">
+                    <div class="ton-label">Ton 5 (Açık)</div>
+                    <div class="hex">#B3FFB3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Turuncu -->
+        <div class="color-group">
+            <h2>🟠 Turuncu (Orange)</h2>
+            <div class="color-row">
+                <div class="color-box" style="background-color: #CC6600;">
+                    <div class="ton-label">Ton 1 (Ana)</div>
+                    <div class="hex">#CC6600</div>
+                </div>
+                <div class="color-box" style="background-color: #FF8C1A;">
+                    <div class="ton-label">Ton 2</div>
+                    <div class="hex">#FF8C1A</div>
+                </div>
+                <div class="color-box" style="background-color: #FFA64D;">
+                    <div class="ton-label">Ton 3</div>
+                    <div class="hex">#FFA64D</div>
+                </div>
+                <div class="color-box" style="background-color: #FFC080;">
+                    <div class="ton-label">Ton 4</div>
+                    <div class="hex">#FFC080</div>
+                </div>
+                <div class="color-box" style="background-color: #FFD9B3;">
+                    <div class="ton-label">Ton 5 (Açık)</div>
+                    <div class="hex">#FFD9B3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sarı -->
+        <div class="color-group">
+            <h2>🟡 Sarı (Yellow)</h2>
+            <div class="color-row">
+                <div class="color-box" style="background-color: #CCCC00;">
+                    <div class="ton-label">Ton 1 (Ana)</div>
+                    <div class="hex">#CCCC00</div>
+                </div>
+                <div class="color-box" style="background-color: #FFFF1A;">
+                    <div class="ton-label">Ton 2</div>
+                    <div class="hex">#FFFF1A</div>
+                </div>
+                <div class="color-box" style="background-color: #FFFF4D;">
+                    <div class="ton-label">Ton 3</div>
+                    <div class="hex">#FFFF4D</div>
+                </div>
+                <div class="color-box" style="background-color: #FFFF80;">
+                    <div class="ton-label">Ton 4</div>
+                    <div class="hex">#FFFF80</div>
+                </div>
+                <div class="color-box" style="background-color: #FFFFB3;">
+                    <div class="ton-label">Ton 5 (Açık)</div>
+                    <div class="hex">#FFFFB3</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

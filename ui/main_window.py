@@ -195,6 +195,8 @@ class MainWindow(QMainWindow):
         # Cargo legend widget (left side, takes available space)
         from ui.cargo_legend_widget import CargoLegendWidget
         self.cargo_legend = CargoLegendWidget(self)
+        # Connect color changed signal
+        self.cargo_legend.color_changed.connect(self.on_cargo_color_changed)
         legend_button_layout.addWidget(self.cargo_legend, 1)  # Stretch factor 1
         
         # "%100 Yap" button (right side, fixed size)
@@ -347,8 +349,8 @@ class MainWindow(QMainWindow):
         if not self.current_plan and self.current_ship and cargo_list:
             self.initialize_empty_plan()
         
-        # Generate colors for cargo list
-        cargo_colors = self._generate_colors(len(cargo_list)) if cargo_list else []
+        # Generate colors for cargo list (check for custom colors)
+        cargo_colors = self._generate_colors(len(cargo_list), cargo_list) if cargo_list else []
         
         # Update LEGEND with cargo list and colors
         if hasattr(self, 'cargo_legend'):
@@ -371,6 +373,31 @@ class MainWindow(QMainWindow):
         # Update button states
         self.update_optimize_button_state()
         self.update_fill_100_button_state()
+    
+    def on_cargo_color_changed(self, cargo):
+        """Handle cargo color change from legend widget
+        
+        Args:
+            cargo: Cargo object whose color was changed
+        """
+        # Mark plan as unsaved
+        self.current_plan_file = None
+        
+        # Regenerate colors and update all displays
+        if self.current_plan and self.current_plan.cargo_requests:
+            cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests)
+            
+            # Update plan viewer
+            if self.current_ship:
+                self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
+            
+            # Update tank cards
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(100, lambda: self.display_tank_cards_in_panel(self.current_plan, self.current_ship))
+            
+            # Update legend (refresh with new colors)
+            if hasattr(self, 'cargo_legend'):
+                self.cargo_legend.set_cargo_list(self.current_plan.cargo_requests, cargo_colors, self.current_plan)
     
     def update_optimize_button_state(self):
         """Update optimize button enabled state"""
@@ -486,8 +513,8 @@ class MainWindow(QMainWindow):
         self.last_tank_swap_state = None
         self.update_undo_menu_state()
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
         
         # Display empty plan
         self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
@@ -552,8 +579,8 @@ class MainWindow(QMainWindow):
         self.last_tank_swap_state = None
         self.update_undo_menu_state()
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
         
         # Refresh display
         from PyQt6.QtCore import QTimer
@@ -587,8 +614,8 @@ class MainWindow(QMainWindow):
         self.last_tank_swap_state = None
         self.update_undo_menu_state()
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
         
         # Refresh display to update visual state (remove "Kilitli" label, enable dragging)
         from PyQt6.QtCore import QTimer
@@ -775,8 +802,8 @@ class MainWindow(QMainWindow):
         self.last_tank_swap_state = None
         self.update_undo_menu_state()
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
         
         # Display plan (table in right panel, cards in top panel)
         self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
@@ -1007,8 +1034,8 @@ class MainWindow(QMainWindow):
         # Mark plan as unsaved (plan was modified)
         self.current_plan_file = None
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
         
         # Display updated plan
         self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
@@ -1119,8 +1146,8 @@ class MainWindow(QMainWindow):
             # Fallback to old method if schematic widget doesn't exist
             return
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(plan.cargo_requests))
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(plan.cargo_requests), plan.cargo_requests)
         
         # Create a callback function to create tank cards
         def create_card(tank, assignment, utilization, color, is_excluded=False):
@@ -1440,8 +1467,8 @@ class MainWindow(QMainWindow):
         # Note: Do NOT update fixed_assignments here - fixed assignments will be set
         # when "Kalan Yükleri Planla" button is pressed
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
         
         # Refresh display (cards and comparison table)
         # IMPORTANT: Update plan_viewer FIRST to ensure correct calculations
@@ -1639,12 +1666,20 @@ class MainWindow(QMainWindow):
         card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         return card
     
-    def _generate_colors(self, count: int) -> list:
-        """Generate distinct colors for cargo types"""
+    def _generate_colors(self, count: int, cargo_list: list = None) -> list:
+        """Generate distinct colors for cargo types
+        
+        Args:
+            count: Number of colors to generate
+            cargo_list: Optional list of Cargo objects to check for custom colors
+            
+        Returns:
+            List of hex color codes
+        """
         if count == 0:
             return []
         
-        # Color palette
+        # Color palette (default colors)
         base_colors = [
             "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
             "#DDA15E", "#BC6C25", "#6C757D", "#E9C46A", "#F4A261"
@@ -1652,7 +1687,18 @@ class MainWindow(QMainWindow):
         
         colors = []
         for i in range(count):
-            colors.append(base_colors[i % len(base_colors)])
+            # Check if cargo has custom color
+            if cargo_list and i < len(cargo_list):
+                cargo = cargo_list[i]
+                if cargo.custom_color:
+                    # Use custom color
+                    colors.append(cargo.custom_color)
+                else:
+                    # Use default color
+                    colors.append(base_colors[i % len(base_colors)])
+            else:
+                # No cargo list provided, use default
+                colors.append(base_colors[i % len(base_colors)])
         
         return colors
     
@@ -1810,8 +1856,8 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'cargo_legend') and self.current_plan:
             self.cargo_legend.update_loaded_quantities(self.current_plan)
         
-        # Generate colors for cargo types
-        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # Generate colors for cargo types (check for custom colors)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
         
         # Refresh display
         from PyQt6.QtCore import QTimer
@@ -1946,8 +1992,8 @@ class MainWindow(QMainWindow):
                 # Load cargo requests
                 self.current_cargo_requests = plan.cargo_requests
                 self.cargo_input_widget.set_cargo_list(self.current_cargo_requests)
-                # Generate colors for cargo types
-                cargo_colors = self._generate_colors(len(plan.cargo_requests)) if plan.cargo_requests else []
+                # Generate colors for cargo types (check for custom colors)
+                cargo_colors = self._generate_colors(len(plan.cargo_requests), plan.cargo_requests) if plan.cargo_requests else []
                 # Display plan
                 self.plan_viewer.display_plan(plan, self.current_ship, cargo_colors)
                 self.display_tank_cards_in_panel(plan, self.current_ship)

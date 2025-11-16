@@ -1,8 +1,8 @@
 """Widget for displaying cargo legend with drag-and-drop support"""
 
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QScrollArea,
-                             QFrame, QVBoxLayout)
-from PyQt6.QtCore import Qt, QMimeData, QByteArray
+                             QFrame, QVBoxLayout, QMenu)
+from PyQt6.QtCore import Qt, QMimeData, QByteArray, pyqtSignal
 from PyQt6.QtGui import QDrag, QPixmap, QPainter, QColor, QFont
 import json
 
@@ -208,10 +208,67 @@ class DraggableCargoCard(QFrame):
         # Clear drag start position after drag completes
         if hasattr(self, 'drag_start_position'):
             delattr(self, 'drag_start_position')
+    
+    def contextMenuEvent(self, event):
+        """Handle right-click context menu"""
+        menu = QMenu(self)
+        
+        change_color_action = menu.addAction("Renk Değiştir")
+        change_color_action.triggered.connect(self._change_color)
+        
+        menu.exec(event.globalPos())
+    
+    def _change_color(self):
+        """Open color selection dialog"""
+        from ui.cargo_color_dialog import CargoColorDialog
+        
+        # Get current color (custom_color if exists, otherwise use card color)
+        current_color = self.cargo.custom_color if self.cargo.custom_color else self.color
+        
+        # Open color dialog
+        dialog = CargoColorDialog(self, current_color)
+        if dialog.exec():
+            selected_color = dialog.get_selected_color()
+            
+            # Update cargo's custom_color
+            self.cargo.custom_color = selected_color
+            
+            # Update card color
+            if selected_color:
+                self.color = selected_color
+                self.setStyleSheet(f"background-color: {selected_color}; border: 2px solid #333; border-radius: 5px;")
+                
+                # Update text color for contrast
+                text_color = self._get_contrast_color(selected_color)
+                layout = self.layout()
+                if layout:
+                    for i in range(layout.count()):
+                        item = layout.itemAt(i)
+                        if item and item.widget():
+                            widget = item.widget()
+                            if isinstance(widget, QLabel):
+                                widget.setStyleSheet(widget.styleSheet().replace(
+                                    f"color: {self._get_contrast_color(self.color)}",
+                                    f"color: {text_color}"
+                                ))
+            else:
+                # Reset to default (will be handled by parent widget)
+                self.cargo.custom_color = None
+            
+            # Notify parent widget that color changed
+            parent = self.parent()
+            while parent:
+                if isinstance(parent, CargoLegendWidget):
+                    parent.on_color_changed(self.cargo)
+                    break
+                parent = parent.parent()
 
 
 class CargoLegendWidget(QWidget):
     """Widget displaying cargo legend with drag-and-drop support"""
+    
+    # Signal emitted when cargo color changes
+    color_changed = pyqtSignal(object)  # Emits Cargo object
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -336,4 +393,68 @@ class CargoLegendWidget(QWidget):
                 qty_label.setText(qty_text)
                 # Use more opaque white background (0.85) for better contrast, larger font (9pt)
                 qty_label.setStyleSheet(f"color: {qty_color}; font-size: 9pt; font-weight: bold; background-color: rgba(255, 255, 255, 0.85); padding: 2px 4px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.2);")
+    
+    def on_color_changed(self, cargo: Cargo):
+        """Handle color change for a cargo
+        
+        Args:
+            cargo: Cargo object whose color was changed
+        """
+        # Find the card for this cargo and update its color
+        for i in range(self.cards_layout.count() - 1):  # Exclude stretch
+            item = self.cards_layout.itemAt(i)
+            if item:
+                card = item.widget()
+                if isinstance(card, DraggableCargoCard) and card.cargo.unique_id == cargo.unique_id:
+                    # Update card color based on custom_color or default
+                    if cargo.custom_color:
+                        card.color = cargo.custom_color
+                        card.setStyleSheet(f"background-color: {cargo.custom_color}; border: 2px solid #333; border-radius: 5px;")
+                        
+                        # Update text color for contrast
+                        text_color = card._get_contrast_color(cargo.custom_color)
+                        layout = card.layout()
+                        if layout:
+                            for j in range(layout.count()):
+                                layout_item = layout.itemAt(j)
+                                if layout_item and layout_item.widget():
+                                    widget = layout_item.widget()
+                                    if isinstance(widget, QLabel):
+                                        # Update text color
+                                        current_style = widget.styleSheet()
+                                        # Extract non-color parts and update color
+                                        if "color:" in current_style:
+                                            parts = current_style.split("color:")
+                                            if len(parts) > 1:
+                                                color_part = parts[1].split(";")[0]
+                                                new_style = current_style.replace(color_part.strip(), text_color)
+                                                widget.setStyleSheet(new_style)
+                    else:
+                        # Reset to default color (from cargo_colors list)
+                        cargo_index = next((idx for idx, c in enumerate(self.cargo_list) if c.unique_id == cargo.unique_id), None)
+                        if cargo_index is not None and cargo_index < len(self.cargo_colors):
+                            default_color = self.cargo_colors[cargo_index]
+                            card.color = default_color
+                            card.setStyleSheet(f"background-color: {default_color}; border: 2px solid #333; border-radius: 5px;")
+                            
+                            # Update text color for contrast
+                            text_color = card._get_contrast_color(default_color)
+                            layout = card.layout()
+                            if layout:
+                                for j in range(layout.count()):
+                                    layout_item = layout.itemAt(j)
+                                    if layout_item and layout_item.widget():
+                                        widget = layout_item.widget()
+                                        if isinstance(widget, QLabel):
+                                            current_style = widget.styleSheet()
+                                            if "color:" in current_style:
+                                                parts = current_style.split("color:")
+                                                if len(parts) > 1:
+                                                    color_part = parts[1].split(";")[0]
+                                                    new_style = current_style.replace(color_part.strip(), text_color)
+                                                    widget.setStyleSheet(new_style)
+                    break
+        
+        # Emit signal to notify parent
+        self.color_changed.emit(cargo)
 

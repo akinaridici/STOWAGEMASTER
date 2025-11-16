@@ -1,7 +1,7 @@
 """Cargo and Receiver model classes"""
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 import uuid
 
 
@@ -32,6 +32,7 @@ class Cargo:
     is_mandatory: bool = False
     ton: float = None  # Weight in tons
     density: float = None  # Density in ton/m³
+    custom_color: Optional[str] = None  # Custom hex color code for cargo visualization
     
     def __post_init__(self):
         """Generate ID if not provided, calculate volume if ton and density provided"""
@@ -58,7 +59,7 @@ class Cargo:
     
     def to_dict(self) -> dict:
         """Convert cargo to dictionary for JSON serialization"""
-        return {
+        result = {
             'unique_id': self.unique_id,
             'cargo_type': self.cargo_type,
             'quantity': self.quantity,
@@ -67,6 +68,10 @@ class Cargo:
             'ton': self.ton,
             'density': self.density
         }
+        # Add custom_color if it exists
+        if self.custom_color is not None:
+            result['custom_color'] = self.custom_color
+        return result
     
     @classmethod
     def from_dict(cls, data: dict) -> 'Cargo':
@@ -91,7 +96,8 @@ class Cargo:
             receivers=receivers,
             is_mandatory=data.get('is_mandatory', False),  # Backward compatibility
             ton=data.get('ton'),
-            density=data.get('density')
+            density=data.get('density'),
+            custom_color=data.get('custom_color')  # Load custom color if exists
         )
         
         # __post_init__ will handle quantity calculation if needed
