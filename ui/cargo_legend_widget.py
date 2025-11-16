@@ -61,11 +61,21 @@ class DraggableCargoCard(QFrame):
         receiver_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)  # Don't block mouse events
         layout.addWidget(receiver_label)
         
-        # Quantity info - show only remaining quantity
+        # Quantity info - show remaining quantity or excess
         remaining_qty = cargo.quantity - self.loaded_quantity
-        qty_text = f"{remaining_qty:.0f} m³ kaldı"
-        # Use high contrast colors for quantity with better background
-        qty_color = "#FF0000" if remaining_qty > 0.001 else "#006600"  # Darker red/green for better contrast
+        if remaining_qty > 0.001:
+            # Still need to load more
+            qty_text = f"{remaining_qty:.0f} m³ kaldı"
+            qty_color = "#FF0000"  # Red for remaining
+        elif remaining_qty < -0.001:
+            # Overloaded - show excess
+            excess_qty = abs(remaining_qty)
+            qty_text = f"{excess_qty:.0f} m³ fazla"
+            qty_color = "#FF6B00"  # Orange for excess
+        else:
+            # Perfect match
+            qty_text = "Tamamlandı"
+            qty_color = "#006600"  # Green for completed
         
         qty_label = QLabel(qty_text)
         qty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -308,10 +318,20 @@ class CargoLegendWidget(QWidget):
                 cargo = card.cargo
                 remaining_qty = cargo.quantity - card.loaded_quantity
                 
-                # Show only remaining quantity
-                qty_text = f"{remaining_qty:.0f} m³ kaldı"
-                # Use high contrast colors for quantity with better background
-                qty_color = "#FF0000" if remaining_qty > 0.001 else "#006600"  # Darker red/green for better contrast
+                # Show remaining quantity or excess
+                if remaining_qty > 0.001:
+                    # Still need to load more
+                    qty_text = f"{remaining_qty:.0f} m³ kaldı"
+                    qty_color = "#FF0000"  # Red for remaining
+                elif remaining_qty < -0.001:
+                    # Overloaded - show excess
+                    excess_qty = abs(remaining_qty)
+                    qty_text = f"{excess_qty:.0f} m³ fazla"
+                    qty_color = "#FF6B00"  # Orange for excess
+                else:
+                    # Perfect match
+                    qty_text = "Tamamlandı"
+                    qty_color = "#006600"  # Green for completed
                 
                 qty_label.setText(qty_text)
                 # Use more opaque white background (0.85) for better contrast, larger font (9pt)

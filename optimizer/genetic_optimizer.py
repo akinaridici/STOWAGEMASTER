@@ -945,25 +945,59 @@ class GeneticOptimizer:
             # Sort by volume (ascending - try smaller tanks first for better fit)
             available_empty_tanks.sort(key=lambda t: t.volume)
             
+            # First pass: Try to fill tanks that meet minimum utilization
             for tank in available_empty_tanks:
                 if remaining_qty < 0.001:
                     break
                 
-                # Calculate how much we can place
+                # Skip if already assigned in this iteration
+                if plan.get_assignment(tank.id) is not None:
+                    continue
+                
                 qty_to_place = min(remaining_qty, tank.volume)
                 
-                # Check minimum utilization
-                if qty_to_place / tank.volume < min_util:
-                    continue  # Skip this tank, too small
-                
-                # Create assignment
-                assignment = TankAssignment(
-                    tank_id=tank.id,
-                    cargo=cargo,
-                    quantity_loaded=qty_to_place
-                )
-                plan.add_assignment(tank.id, assignment)
-                remaining_qty -= qty_to_place
+                # If tank can be filled completely, always use it (no min_util check needed)
+                if remaining_qty >= tank.volume:
+                    # Tank will be completely filled, no need to check min_util
+                    assignment = TankAssignment(
+                        tank_id=tank.id,
+                        cargo=cargo,
+                        quantity_loaded=qty_to_place
+                    )
+                    plan.add_assignment(tank.id, assignment)
+                    remaining_qty -= qty_to_place
+                elif qty_to_place / tank.volume >= min_util:
+                    # Partial fill but meets minimum utilization
+                    assignment = TankAssignment(
+                        tank_id=tank.id,
+                        cargo=cargo,
+                        quantity_loaded=qty_to_place
+                    )
+                    plan.add_assignment(tank.id, assignment)
+                    remaining_qty -= qty_to_place
+            
+            # Second pass: If still remaining cargo, fill remaining tanks (relax min_util)
+            # This ensures no cargo is left unplaced if there's available space
+            if remaining_qty > 0.001:
+                for tank in available_empty_tanks:
+                    if remaining_qty < 0.001:
+                        break
+                    
+                    # Skip if already assigned in first pass
+                    if plan.get_assignment(tank.id) is not None:
+                        continue
+                    
+                    qty_to_place = min(remaining_qty, tank.volume)
+                    
+                    # Place remaining cargo even if it doesn't meet min_util
+                    # Better to use the space than leave cargo unplaced
+                    assignment = TankAssignment(
+                        tank_id=tank.id,
+                        cargo=cargo,
+                        quantity_loaded=qty_to_place
+                    )
+                    plan.add_assignment(tank.id, assignment)
+                    remaining_qty -= qty_to_place
         
         return plan
     

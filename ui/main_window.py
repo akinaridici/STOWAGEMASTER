@@ -1195,11 +1195,13 @@ class MainWindow(QMainWindow):
         
         # Refresh display
         cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # IMPORTANT: Update plan_viewer FIRST to ensure correct calculations
+        self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
         from PyQt6.QtCore import QTimer
         QTimer.singleShot(100, lambda: self.display_tank_cards_in_panel(self.current_plan, self.current_ship))
-        self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
         
-        # Update LEGEND with new loaded quantities
+        # Update LEGEND with new loaded quantities (AFTER plan_viewer is updated)
+        # This ensures plan.get_cargo_total_loaded() returns correct values
         if hasattr(self, 'cargo_legend') and self.current_plan:
             self.cargo_legend.update_loaded_quantities(self.current_plan)
         
@@ -1421,9 +1423,11 @@ class MainWindow(QMainWindow):
         cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
         
         # Refresh display (cards and comparison table)
+        # IMPORTANT: Update plan_viewer FIRST to ensure correct calculations
+        # Then update tank cards (with timer for layout stability)
+        self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)  # This updates comparison table with correct values
         from PyQt6.QtCore import QTimer
         QTimer.singleShot(100, lambda: self.display_tank_cards_in_panel(self.current_plan, self.current_ship))
-        self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)  # This updates comparison table too
         
         # Calculate utilization percentages
         target_util = (target_quantity / target_tank.volume * 100) if target_tank.volume > 0 else 0
@@ -1451,7 +1455,8 @@ class MainWindow(QMainWindow):
         # Update UNDO menu state after successful swap
         self.update_undo_menu_state()
         
-        # Update LEGEND with new loaded quantities
+        # Update LEGEND with new loaded quantities (AFTER plan_viewer is updated)
+        # This ensures plan.get_cargo_total_loaded() returns correct values
         if hasattr(self, 'cargo_legend') and self.current_plan:
             self.cargo_legend.update_loaded_quantities(self.current_plan)
         
@@ -1555,11 +1560,13 @@ class MainWindow(QMainWindow):
         
         # Refresh display
         cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
+        # IMPORTANT: Update plan_viewer FIRST to ensure correct calculations
+        self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
         from PyQt6.QtCore import QTimer
         QTimer.singleShot(100, lambda: self.display_tank_cards_in_panel(self.current_plan, self.current_ship))
-        self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
         
-        # Update LEGEND with new loaded quantities
+        # Update LEGEND with new loaded quantities (AFTER plan_viewer is updated)
+        # This ensures plan.get_cargo_total_loaded() returns correct values
         if hasattr(self, 'cargo_legend') and self.current_plan:
             self.cargo_legend.update_loaded_quantities(self.current_plan)
         
