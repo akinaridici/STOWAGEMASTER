@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QProgressBar, QDoubleSpinBox, QLineEdit, QDialog,
                              QDialogButtonBox, QSizePolicy, QApplication)
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCloseEvent
 from typing import Optional
 
 from models.ship import Ship
@@ -27,6 +28,7 @@ class MainWindow(QMainWindow):
         self.current_ship: Optional[Ship] = None
         self.current_cargo_requests: list[Cargo] = []
         self.current_plan: Optional[StowagePlan] = None
+        self.current_plan_file: Optional[str] = None  # Path to saved plan file, None if unsaved
         self.excluded_tanks: set[str] = set()  # Tank IDs excluded from planning
         self.last_tank_swap_state: Optional[dict] = None  # History for UNDO (drag-drop only)
         self.optimization_settings = self.storage.load_optimization_settings()  # Load optimization settings
@@ -345,21 +347,24 @@ class MainWindow(QMainWindow):
         if not self.current_plan and self.current_ship and cargo_list:
             self.initialize_empty_plan()
         
+        # Generate colors for cargo list
+        cargo_colors = self._generate_colors(len(cargo_list)) if cargo_list else []
+        
         # Update LEGEND with cargo list and colors
         if hasattr(self, 'cargo_legend'):
             if self.current_plan:
                 # Use current cargo list (which is now synced with plan)
-                cargo_colors = self._generate_colors(len(cargo_list))
                 self.cargo_legend.set_cargo_list(cargo_list, cargo_colors, self.current_plan)
             elif cargo_list:
                 # Generate colors for current cargo list
-                cargo_colors = self._generate_colors(len(cargo_list))
                 self.cargo_legend.set_cargo_list(cargo_list, cargo_colors, None)
             else:
                 self.cargo_legend.set_cargo_list([], [], None)
         
-        # Refresh tank cards display to show updated planned status
+        # Update plan_viewer to show new cargo rows in comparison table
         if self.current_plan and self.current_ship:
+            self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
+            # Refresh tank cards display to show updated planned status
             from PyQt6.QtCore import QTimer
             QTimer.singleShot(100, lambda: self.display_tank_cards_in_panel(self.current_plan, self.current_ship))
         
@@ -472,6 +477,9 @@ class MainWindow(QMainWindow):
             cargo_requests=self.current_cargo_requests,
             plan_name="Manuel Plan"
         )
+        
+        # Mark plan as unsaved (new plan)
+        self.current_plan_file = None
         
         # Clear fixed assignments and UNDO history
         self.fixed_assignments.clear()
@@ -756,6 +764,9 @@ class MainWindow(QMainWindow):
                 # User cancelled, use best solution anyway
                 self.current_plan = solutions[0][0]
         
+        # Mark plan as unsaved (new or modified plan)
+        self.current_plan_file = None
+        
         # Keep excluded tanks (empty tanks can still be excluded after plan creation)
         # Don't clear excluded_tanks - allow excluding empty tanks even after plan creation
         
@@ -993,6 +1004,9 @@ class MainWindow(QMainWindow):
             # Restore normal cursor
             QApplication.restoreOverrideCursor()
         
+        # Mark plan as unsaved (plan was modified)
+        self.current_plan_file = None
+        
         # Generate colors for cargo types
         cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests)) if self.current_plan else []
         
@@ -1065,6 +1079,7 @@ class MainWindow(QMainWindow):
             
             # Save plan to selected file
             if self.storage.save_plan_to_file(self.current_plan, file_path):
+                self.current_plan_file = file_path  # Mark plan as saved
                 QMessageBox.information(
                     self,
                     "Başarılı",
@@ -1189,6 +1204,9 @@ class MainWindow(QMainWindow):
         
         # Add assignment
         self.current_plan.add_assignment(tank_id, new_assignment)
+        
+        # Mark plan as unsaved (plan was modified)
+        self.current_plan_file = None
         
         # Note: Do NOT mark as fixed assignment here - fixed assignments will be set
         # when "Kalan Yükleri Planla" button is pressed
@@ -1339,6 +1357,9 @@ class MainWindow(QMainWindow):
             del self.current_plan.assignments[source_tank_id]
         if target_tank_id in self.current_plan.assignments:
             del self.current_plan.assignments[target_tank_id]
+        
+        # Mark plan as unsaved (plan was modified)
+        self.current_plan_file = None
         
         # Calculate new quantities: adjust to tank capacities
         # Plan oluşturulduktan sonra elle düzenleme yapılırken yük miktarı kısıtı kaldırıldı
@@ -1554,6 +1575,9 @@ class MainWindow(QMainWindow):
             self.current_plan.add_assignment(source_tank_id, saved_source_assignment)
         if saved_target_assignment:
             self.current_plan.add_assignment(target_tank_id, saved_target_assignment)
+        
+        # Mark plan as unsaved (plan was modified)
+        self.current_plan_file = None
         
         # Clear history (only one undo step)
         self.last_tank_swap_state = None
@@ -1906,6 +1930,7 @@ class MainWindow(QMainWindow):
         plan = self.storage.load_plan_from_file(file_path)
         if plan:
             self.current_plan = plan
+            self.current_plan_file = file_path  # Mark plan as loaded from file
             # Load associated ship
             self.current_ship = self.storage.load_ship_profile(plan.ship_profile_id)
             if self.current_ship:
@@ -1967,4 +1992,38 @@ class MainWindow(QMainWindow):
             )
             # Update menu to remove invalid file
             self.update_recent_plans_menu()
+    
+    def closeEvent(self, event: QCloseEvent):
+        """Handle window close event - check for unsaved plan"""
+        if self.current_plan and self.current_plan_file is None:
+            # Plan exists but is not saved
+            reply = QMessageBox.question(
+                self,
+                "Kaydedilmemiş Plan",
+                "Mevcut plan kaydedilmemiş. Çıkmadan önce kaydetmek ister misiniz?",
+                QMessageBox.StandardButton.Yes | 
+                QMessageBox.StandardButton.No | 
+                QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Save plan
+                self.save_current_plan()
+                # Check if plan was actually saved (user might have cancelled save dialog)
+                if self.current_plan_file is None:
+                    # User cancelled save, don't close
+                    event.ignore()
+                    return
+                # Plan was saved, allow close
+                event.accept()
+            elif reply == QMessageBox.StandardButton.No:
+                # Don't save, allow close
+                event.accept()
+            else:
+                # Cancel close
+                event.ignore()
+        else:
+            # No plan or plan is saved, allow close
+            event.accept()
 
