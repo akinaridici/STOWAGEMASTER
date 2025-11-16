@@ -30,6 +30,8 @@ class MainWindow(QMainWindow):
         self.excluded_tanks: set[str] = set()  # Tank IDs excluded from planning
         self.last_tank_swap_state: Optional[dict] = None  # History for UNDO (drag-drop only)
         self.optimization_settings = self.storage.load_optimization_settings()  # Load optimization settings
+        # Force algorithm to always be 'genetic' on startup (not saved between sessions)
+        self.optimization_settings['optimization_algorithm'] = 'genetic'
         self.fixed_assignments: dict[str, TankAssignment] = {}  # Manual assignments that should be preserved
         
         self.init_ui()
@@ -1802,9 +1804,15 @@ class MainWindow(QMainWindow):
             # Get new settings
             new_settings = dialog.get_settings()
             
-            # Save settings
+            # Get algorithm selection from dialog (for current session only, not saved)
+            selected_algorithm = dialog.algo_combo.currentData()
+            # Add to settings for current session (will reset to 'genetic' on next startup)
+            new_settings['optimization_algorithm'] = selected_algorithm
+            
+            # Save settings (algorithm selection is included but will be ignored on next startup)
             if self.storage.save_optimization_settings(new_settings):
                 self.optimization_settings = new_settings
+                # Note: algorithm selection is in settings for this session, but will reset to 'genetic' on next startup
                 QMessageBox.information(
                     self,
                     "Ayarlar Kaydedildi",

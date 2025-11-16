@@ -357,10 +357,17 @@ class StorageManager:
             return self.get_default_settings()
     
     def save_optimization_settings(self, settings: Dict) -> bool:
-        """Save optimization settings to file"""
+        """Save optimization settings to file
+        
+        Note: optimization_algorithm is NOT saved - it always defaults to 'genetic' on startup
+        """
         try:
+            # Create a copy of settings without optimization_algorithm (not saved between sessions)
+            settings_to_save = settings.copy()
+            settings_to_save.pop('optimization_algorithm', None)  # Remove if exists, don't save it
+            
             with open(self.settings_file, 'w', encoding='utf-8') as f:
-                json.dump(settings, f, indent=2, ensure_ascii=False)
+                json.dump(settings_to_save, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
             print(f"Error saving optimization settings: {e}")

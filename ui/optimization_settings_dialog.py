@@ -234,12 +234,9 @@ class OptimizationSettingsDialog(QDialog):
     
     def load_settings(self):
         """Load settings into UI"""
-        # Algorithm selection
-        current_algo = self.settings.get('optimization_algorithm', 'genetic')
-        if current_algo == 'advanced':
-            self.algo_combo.setCurrentIndex(1)
-        else:
-            self.algo_combo.setCurrentIndex(0)  # Default: Genetic Algorithm
+        # Algorithm selection - always default to Genetic Algorithm (not saved)
+        # User can change it during the session, but it will reset to 'genetic' on next startup
+        self.algo_combo.setCurrentIndex(0)  # Always default: Genetic Algorithm
         
         min_util = self.settings.get('min_utilization', 0.65) * 100
         self.min_utilization_spin.setValue(min_util)
@@ -286,9 +283,12 @@ class OptimizationSettingsDialog(QDialog):
         self.accept()
     
     def get_settings(self) -> Dict:
-        """Get settings from UI"""
+        """Get settings from UI
+        
+        Note: optimization_algorithm is NOT saved - it always defaults to 'genetic' on startup
+        """
         return {
-            'optimization_algorithm': self.algo_combo.currentData(),
+            # 'optimization_algorithm' is NOT saved - always defaults to 'genetic' on startup
             'min_utilization': self.min_utilization_spin.value() / 100.0,
             # GA parameters
             'ga_population_size': self.ga_population_size_spin.value(),
