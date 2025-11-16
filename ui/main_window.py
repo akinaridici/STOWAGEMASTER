@@ -603,28 +603,65 @@ class MainWindow(QMainWindow):
             )
             return
         
-        # Get cargo requests from input widget
-        self.current_cargo_requests = self.cargo_input_widget.get_cargo_list()
-        
-        if not self.current_cargo_requests:
-            QMessageBox.warning(
-                self,
-                "Eksik Bilgi",
-                "Lütfen en az bir yükleme talebi girin."
-            )
-            return
-        
         from optimizer.stowage_optimizer import StowageOptimizer
         from ui.plan_selection_dialog import PlanSelectionDialog
+        from models.plan import StowagePlan
         
-        # Validate
+        # STEP 1: Detect manual assignments (if current_plan exists with manual assignments)
+        manual_assignments = {}
+        cargo_requests_to_optimize = []
+        
+        # If we have an existing plan with manual assignments, use its cargo requests
+        # Otherwise, get fresh cargo requests from input widget
+        if self.current_plan and self.current_plan.assignments:
+            # Use cargo requests from existing plan to maintain unique_id consistency
+            self.current_cargo_requests = self.current_plan.cargo_requests
+            
+            # There are existing assignments - check if they are manual
+            # If current_plan exists, all assignments are considered manual at this point
+            manual_assignments = dict(self.current_plan.assignments)
+            
+            # STEP 2: Calculate remaining cargos
+            # Use current_plan to calculate remaining cargos (DON'T pass manual_assignments to avoid double counting)
+            remaining_cargos = self.current_plan.get_remaining_cargos(fixed_assignments=None)
+            
+            if remaining_cargos:
+                # Use remaining cargos for optimization
+                cargo_requests_to_optimize = remaining_cargos
+            else:
+                # All cargos are already assigned manually
+                QMessageBox.information(
+                    self,
+                    "Bilgi",
+                    "Tüm yükler zaten elle planlanmış. Kalan yük yok."
+                )
+                return
+        else:
+            # No existing plan, get cargo requests from input widget
+            self.current_cargo_requests = self.cargo_input_widget.get_cargo_list()
+            
+            if not self.current_cargo_requests:
+                QMessageBox.warning(
+                    self,
+                    "Eksik Bilgi",
+                    "Lütfen en az bir yükleme talebi girin."
+                )
+                return
+            
+            cargo_requests_to_optimize = self.current_cargo_requests
+        
+        # Validate with cargo requests to optimize
         is_valid, error_msg = StowageOptimizer.validate_plan(
-            self.current_ship, self.current_cargo_requests
+            self.current_ship, cargo_requests_to_optimize
         )
         
         if not is_valid:
             QMessageBox.critical(self, "Hata", error_msg)
             return
+        
+        # STEP 3: Add manually assigned tank IDs to excluded_tanks
+        manual_tank_ids = set(manual_assignments.keys())
+        combined_excluded_tanks = (self.excluded_tanks or set()) | manual_tank_ids
         
         # Check which optimization algorithm to use (from settings)
         algorithm = self.optimization_settings.get('optimization_algorithm', 'genetic')
@@ -638,25 +675,34 @@ class MainWindow(QMainWindow):
                 # Use Genetic Algorithm optimizer
                 from optimizer.genetic_optimizer import GeneticOptimizer
                 
-                # Validate using GA validator
+                # Validate using GA validator with remaining cargos
                 is_valid, error_msg = GeneticOptimizer.validate_plan(
-                    self.current_ship, self.current_cargo_requests
+                    self.current_ship, cargo_requests_to_optimize
                 )
                 
                 if not is_valid:
                     QMessageBox.critical(self, "Hata", error_msg)
                     return
                 
-                # Create GA optimizer
+                # Create GA optimizer with remaining cargos and fixed assignments
                 ga_optimizer = GeneticOptimizer(
                     self.current_ship,
-                    self.current_cargo_requests,
-                    excluded_tanks=self.excluded_tanks if self.excluded_tanks else None,
+                    cargo_requests_to_optimize,
+                    excluded_tanks=combined_excluded_tanks if combined_excluded_tanks else None,
+                    fixed_assignments=manual_assignments if manual_assignments else None,
                     settings=self.optimization_settings
                 )
                 
                 # Run optimization
                 best_plan = ga_optimizer.optimize()
+                
+                # STEP 4: Merge algorithm results with manual assignments
+                if manual_assignments:
+                    # Add manual assignments to the plan
+                    for tank_id, assignment in manual_assignments.items():
+                        best_plan.add_assignment(tank_id, assignment)
+                    # Update cargo_requests to include original requests (for display)
+                    best_plan.cargo_requests = self.current_cargo_requests
                 
                 # Score the plan
                 from optimizer.stowage_optimizer import StowageOptimizer
@@ -669,12 +715,20 @@ class MainWindow(QMainWindow):
                 # Generate plan using advanced optimizer with multiple retries
                 best_plan = AdvancedStowageOptimizer.optimize_with_fixed_and_retry(
                     self.current_ship,
-                    self.current_cargo_requests,
-                    excluded_tanks=self.excluded_tanks if self.excluded_tanks else None,
-                    fixed_assignments=None,
+                    cargo_requests_to_optimize,
+                    excluded_tanks=combined_excluded_tanks if combined_excluded_tanks else None,
+                    fixed_assignments=manual_assignments if manual_assignments else None,
                     num_retries=5,
                     settings=self.optimization_settings
                 )
+                
+                # STEP 4: Merge algorithm results with manual assignments
+                if manual_assignments:
+                    # Add manual assignments to the plan
+                    for tank_id, assignment in manual_assignments.items():
+                        best_plan.add_assignment(tank_id, assignment)
+                    # Update cargo_requests to include original requests (for display)
+                    best_plan.cargo_requests = self.current_cargo_requests
                 
                 # For compatibility with existing code, create solutions list
                 from optimizer.stowage_optimizer import StowageOptimizer
@@ -778,11 +832,12 @@ class MainWindow(QMainWindow):
                     self.fixed_assignments[tank_id] = assignment
         
         # STEP 3: Get remaining cargos and tanks (after clearing algorithm results)
-        remaining_cargos = self.current_plan.get_remaining_cargos(self.fixed_assignments)
+        # DON'T pass fixed_assignments to avoid double counting (current_plan already has them)
+        remaining_cargos = self.current_plan.get_remaining_cargos(fixed_assignments=None)
         remaining_tanks = self.current_plan.get_remaining_tanks(
             self.current_ship, 
-            self.fixed_assignments, 
-            self.excluded_tanks
+            fixed_assignments=None,  # DON'T pass - plan already has them
+            excluded_tanks=self.excluded_tanks
         )
         
         # If no remaining cargos, check if we should clear algorithm results and re-plan
@@ -797,11 +852,11 @@ class MainWindow(QMainWindow):
                 self.fixed_assignments.clear()
                 
                 # Recalculate remaining cargos (should now be all cargos)
-                remaining_cargos = self.current_plan.get_remaining_cargos(self.fixed_assignments)
+                remaining_cargos = self.current_plan.get_remaining_cargos(fixed_assignments=None)
                 remaining_tanks = self.current_plan.get_remaining_tanks(
                     self.current_ship, 
-                    self.fixed_assignments, 
-                    self.excluded_tanks
+                    fixed_assignments=None,
+                    excluded_tanks=self.excluded_tanks
                 )
                 
                 # If still no remaining cargos, it means all cargos are in manual assignments
@@ -829,11 +884,11 @@ class MainWindow(QMainWindow):
                         self.current_plan.remove_assignment(tank_id)
                     
                     # Recalculate remaining cargos
-                    remaining_cargos = self.current_plan.get_remaining_cargos(self.fixed_assignments)
+                    remaining_cargos = self.current_plan.get_remaining_cargos(fixed_assignments=None)
                     remaining_tanks = self.current_plan.get_remaining_tanks(
                         self.current_ship, 
-                        self.fixed_assignments, 
-                        self.excluded_tanks
+                        fixed_assignments=None,
+                        excluded_tanks=self.excluded_tanks
                     )
                     
                     if not remaining_cargos:

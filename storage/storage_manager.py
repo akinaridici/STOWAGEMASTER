@@ -419,12 +419,50 @@ class StorageManager:
             # Get current recent plans list
             recent_plans = settings.get('recent_plans', [])
             
-            # Remove the file_path if it already exists (to avoid duplicates)
+            # Convert to relative path if file is in saved_plans directory
+            plan_path = Path(file_path)
+            relative_path = None
+            
+            try:
+                # Check if file is in saved_plans directory
+                resolved_plan_path = Path(file_path).resolve()
+                resolved_plans_dir = self.plans_dir.resolve()
+                
+                # Check if file is in saved_plans directory (compatible with Python < 3.9)
+                try:
+                    # Python 3.9+ method
+                    is_in_plans_dir = resolved_plan_path.is_relative_to(resolved_plans_dir)
+                except AttributeError:
+                    # Python < 3.9 fallback: check if plans_dir is a parent
+                    try:
+                        resolved_plan_path.relative_to(resolved_plans_dir)
+                        is_in_plans_dir = True
+                    except ValueError:
+                        is_in_plans_dir = False
+                
+                if is_in_plans_dir:
+                    # File is in saved_plans, use only filename
+                    relative_path = Path(file_path).name
+                else:
+                    # File is outside saved_plans, keep full path
+                    relative_path = str(resolved_plan_path)
+            except (ValueError, OSError):
+                # If resolve fails, use filename if parent matches plans_dir
+                if Path(file_path).parent.resolve() == self.plans_dir.resolve():
+                    relative_path = Path(file_path).name
+                else:
+                    relative_path = str(Path(file_path))
+            
+            # Remove the relative_path if it already exists (to avoid duplicates)
+            # Also check for old full paths that might match
+            recent_plans = [p for p in recent_plans if p != relative_path]
+            
+            # Also remove old full path if it exists
             if file_path in recent_plans:
                 recent_plans.remove(file_path)
             
             # Add to the beginning of the list
-            recent_plans.insert(0, file_path)
+            recent_plans.insert(0, relative_path)
             
             # Keep only the last 5 plans
             recent_plans = recent_plans[:5]
@@ -442,21 +480,52 @@ class StorageManager:
         """Load the list of recently opened plan file paths
         
         Returns:
-            List of file paths (up to 5), most recent first
+            List of full file paths (up to 5), most recent first
         """
         try:
             settings = self.load_optimization_settings()
             recent_plans = settings.get('recent_plans', [])
             
-            # Filter out non-existent files
+            # Convert relative paths to full paths and filter out non-existent files
             valid_plans = []
-            for plan_path in recent_plans:
-                if Path(plan_path).exists():
-                    valid_plans.append(plan_path)
+            updated_plans = []
             
-            # Update settings if some files were removed
-            if len(valid_plans) != len(recent_plans):
-                settings['recent_plans'] = valid_plans
+            for plan_path_str in recent_plans:
+                plan_path = Path(plan_path_str)
+                
+                # Check if it's a relative path (just filename) or absolute path
+                if not plan_path.is_absolute():
+                    # Relative path - assume it's in saved_plans directory
+                    full_path = self.plans_dir / plan_path
+                else:
+                    # Absolute path (old format) - use as is
+                    full_path = plan_path
+                
+                # Check if file exists
+                if full_path.exists():
+                    # Convert to relative path if in saved_plans for storage
+                    try:
+                        # Python 3.9+ method
+                        is_in_plans_dir = full_path.resolve().is_relative_to(self.plans_dir.resolve())
+                    except AttributeError:
+                        # Python < 3.9 fallback
+                        try:
+                            full_path.resolve().relative_to(self.plans_dir.resolve())
+                            is_in_plans_dir = True
+                        except ValueError:
+                            is_in_plans_dir = False
+                    
+                    if is_in_plans_dir:
+                        updated_plans.append(full_path.name)
+                    else:
+                        updated_plans.append(str(full_path))
+                    
+                    # Return full path for use
+                    valid_plans.append(str(full_path))
+            
+            # Update settings if paths were converted or some files were removed
+            if updated_plans != recent_plans:
+                settings['recent_plans'] = updated_plans
                 self.save_optimization_settings(settings)
             
             return valid_plans
