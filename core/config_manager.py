@@ -126,7 +126,7 @@ class ConfigurationManager:
         fields = dataclass_type.__dataclass_fields__
         kwargs = {}
         
-        for field in fields:
+        for field in fields.values():
             field_name = field.name
             field_type = field.type
             

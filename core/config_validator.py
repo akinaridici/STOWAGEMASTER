@@ -113,8 +113,8 @@ class ConfigValidator:
         ]
         
         for tolerance, name in faz_tolerances:
-            if not 0.001 <= tolerance <= 0.5:
-                errors.append(f"{name} tolerance must be between 0.001 and 0.5")
+            if not 0.01 <= tolerance <= 0.5:
+                errors.append(f"{name} tolerance must be between 0.01 and 0.5")
         
         # Validate score weights sum to 1.0
         total_weight = sum(config.score_weights.values())

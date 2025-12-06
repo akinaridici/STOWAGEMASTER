@@ -1,7 +1,8 @@
 """Configuration migration utilities"""
 
+import json
 from typing import Dict, Any
-from .config_models import AppConfig
+from .config_models import AppConfig, GeneticAlgorithmConfig, AdvancedOptimizerConfig, Environment
 from .config_manager import ConfigurationManager
 
 
@@ -28,7 +29,7 @@ class ConfigMigration:
             
             if old_settings_path.exists():
                 with open(old_settings_path, 'r') as f:
-                    old_data = f
+                    old_data = json.load(f)
                 
                 # Create new config from old data
                 new_config = self._convert_old_to_new_config(old_data)
@@ -70,7 +71,7 @@ class ConfigMigration:
             AppConfig instance with converted data
         """
         # Extract genetic algorithm settings
-        ga_config = AppConfig.genetic_algorithm(
+        ga_config = GeneticAlgorithmConfig(
             population_size=old_data.get('ga_population_size', 500),
             max_generations=old_data.get('ga_max_generations', 2000),
             crossover_rate=old_data.get('ga_crossover_rate', 0.90),
@@ -87,7 +88,7 @@ class ConfigMigration:
         )
         
         # Extract advanced optimizer settings
-        advanced_config = AppConfig.advanced_optimizer(
+        advanced_config = AdvancedOptimizerConfig(
             min_utilization=old_data.get('min_utilization', 0.65),
             drag_drop_warning_threshold=old_data.get('drag_drop_warning_threshold', 0.70),
             score_weights=old_data.get('score_weights', {}),
@@ -107,8 +108,6 @@ class ConfigMigration:
         )
         
         # Create full config
-        from .config_models import Environment
-        
         return AppConfig(
             environment=Environment(old_data.get('environment', 'development')),
             genetic_algorithm=ga_config,
