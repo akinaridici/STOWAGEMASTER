@@ -59,6 +59,10 @@ class MainWindow(QMainWindow):
         
         self.fixed_assignments: dict[str, TankAssignment] = {}  # Manual assignments that should be preserved
         
+        # Charter Mode state
+        self.charter_mode_enabled: bool = False  # Charter Mode toggle state
+        self.algorithm_buttons_disabled: bool = False  # Sticky flag to keep algorithm buttons disabled
+        
         self.init_ui()
         
         # Auto-load last profile if available
@@ -226,10 +230,20 @@ class MainWindow(QMainWindow):
         self.fill_100_btn = QPushButton("%100 Yap")
         self.fill_100_btn.setMinimumHeight(35)
         self.fill_100_btn.setMinimumWidth(100)
-        self.fill_100_btn.setStyleSheet("font-size: 10pt; font-weight: bold;")
+        self.fill_100_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
         self.fill_100_btn.clicked.connect(self.fill_tanks_to_100_percent)
         self.fill_100_btn.setEnabled(False)  # Initially disabled
         legend_button_layout.addWidget(self.fill_100_btn)  # Fixed size on right
+        
+        # "Charterer Mode" button (right side, fixed size, next to %100 Yap)
+        self.charter_mode_btn = QPushButton("Charterer Mode")
+        self.charter_mode_btn.setMinimumHeight(35)
+        self.charter_mode_btn.setMinimumWidth(120)
+        self.charter_mode_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
+        self.charter_mode_btn.setCheckable(True)  # Make it a toggle button
+        self.charter_mode_btn.setChecked(False)  # Initially unchecked
+        self.charter_mode_btn.clicked.connect(self.toggle_charter_mode)
+        legend_button_layout.addWidget(self.charter_mode_btn)  # Fixed size on right
         
         layout.addLayout(legend_button_layout)
         
@@ -424,6 +438,13 @@ class MainWindow(QMainWindow):
     
     def update_optimize_button_state(self):
         """Update optimize button enabled state"""
+        # If algorithm buttons are disabled (Charter Mode sticky disable), keep disabled
+        if self.algorithm_buttons_disabled:
+            self.optimize_btn.setEnabled(False)
+            if hasattr(self, 'remaining_cargo_btn'):
+                self.remaining_cargo_btn.setEnabled(False)
+            return
+        
         has_ship = self.current_ship is not None
         
         # Get current cargo list directly from widget
@@ -472,6 +493,13 @@ class MainWindow(QMainWindow):
     
     def update_remaining_cargo_button_state(self):
         """Update 'Kalan Yükleri Planla' button visibility and enabled state"""
+        # If algorithm buttons are disabled (Charter Mode sticky disable), keep disabled
+        if self.algorithm_buttons_disabled:
+            if hasattr(self, 'remaining_cargo_btn'):
+                self.remaining_cargo_btn.setEnabled(False)
+            self.optimize_btn.setEnabled(False)
+            return
+        
         # Update remaining cargo button state
         self._update_remaining_cargo_button_state_internal()
         
@@ -1239,16 +1267,22 @@ class MainWindow(QMainWindow):
         # Calculate quantity to load
         # Option: Use cargo's full quantity if fits, otherwise use tank capacity
         remaining_cargo = cargo.quantity - self.current_plan.get_cargo_total_loaded(cargo.unique_id)
-        quantity_to_load = min(remaining_cargo, tank.volume)
         
-        # If no remaining cargo, ask user
+        # If no remaining cargo (completed or overloaded), check Charter Mode
         if remaining_cargo <= 0.001:
-            QMessageBox.warning(
-                self,
-                "Yük Tamamlandı",
-                f"{cargo.cargo_type} yükünün tamamı zaten yüklenmiş."
-            )
-            return
+            # In Charter Mode, allow loading even if cargo is completed or overloaded
+            if not self.charter_mode_enabled:
+                QMessageBox.warning(
+                    self,
+                    "Yük Tamamlandı",
+                    f"{cargo.cargo_type} yükünün tamamı zaten yüklenmiş."
+                )
+                return
+            # In Charter Mode, allow loading - use tank capacity as quantity
+            quantity_to_load = tank.volume
+        else:
+            # Normal case: use remaining cargo or tank capacity, whichever is smaller
+            quantity_to_load = min(remaining_cargo, tank.volume)
         
         # Create assignment
         from models.plan import TankAssignment
@@ -1801,6 +1835,25 @@ class MainWindow(QMainWindow):
             f"Not: Bu işlem sipariş miktarını aşabilir."
         )
     
+    def toggle_charter_mode(self):
+        """Toggle Charter Mode on/off"""
+        self.charter_mode_enabled = self.charter_mode_btn.isChecked()
+        
+        if self.charter_mode_enabled:
+            # Charter Mode ON: Disable algorithm buttons and allow completed/overfilled cargo drag-drop
+            self.algorithm_buttons_disabled = True
+            self.optimize_btn.setEnabled(False)
+            if hasattr(self, 'remaining_cargo_btn'):
+                self.remaining_cargo_btn.setEnabled(False)
+        else:
+            # Charter Mode OFF: Keep algorithm buttons disabled (sticky disable)
+            # Drag-drop restrictions will be restored automatically in handle_cargo_drop
+            pass  # algorithm_buttons_disabled stays True to keep buttons disabled
+        
+        # Update button states to reflect Charter Mode
+        self.update_optimize_button_state()
+        self.update_remaining_cargo_button_state()
+    
     def update_fill_100_button_state(self):
         """Update '%100 Yap' button enabled state"""
         if not hasattr(self, 'fill_100_btn'):
@@ -1829,68 +1882,76 @@ class MainWindow(QMainWindow):
             )
             return
         
-        # Check if there are locked tanks
-        has_locked_tanks = len(self.fixed_assignments) > 0
-        cleared_only_planned = False
-        
-        if has_locked_tanks:
-            # Show dialog with three options for locked tanks
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("Tüm Tankları Boşalt")
-            msg_box.setText("Kilitli tanklar bulunuyor. Nasıl devam etmek istersiniz?")
-            msg_box.setInformativeText(
-                f"Toplam {len(self.fixed_assignments)} kilitli tank var.\n\n"
-                "• Tümünü Boşalt: Tüm tankları (kilitli dahil) boşaltır\n"
-                "• Sadece Planlananları Boşalt: Sadece algoritma sonuçlarını boşaltır, kilitli tankları korur\n"
-                "• İptal: İşlemi iptal eder"
-            )
+        # In Charter Mode, clear everything without options
+        if self.charter_mode_enabled:
+            # Clear all assignments and fixed assignments (including locked tanks)
+            self.current_plan.assignments.clear()
+            self.fixed_assignments.clear()
+            cleared_only_planned = False
+        else:
+            # Normal mode: check if there are locked tanks
+            has_locked_tanks = len(self.fixed_assignments) > 0
+            cleared_only_planned = False
             
-            # Create custom buttons
-            clear_all_btn = msg_box.addButton("Tümünü Boşalt", QMessageBox.ButtonRole.AcceptRole)
-            clear_planned_btn = msg_box.addButton("Sadece Planlananları Boşalt", QMessageBox.ButtonRole.AcceptRole)
-            cancel_btn = msg_box.addButton("İptal", QMessageBox.ButtonRole.RejectRole)
-            msg_box.setDefaultButton(cancel_btn)
-            
-            reply = msg_box.exec()
-            
-            if reply == QMessageBox.StandardButton.Cancel or msg_box.clickedButton() == cancel_btn:
-                return
-            elif msg_box.clickedButton() == clear_all_btn:
+            if has_locked_tanks:
+                # Show dialog with three options for locked tanks
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("Tüm Tankları Boşalt")
+                msg_box.setText("Kilitli tanklar bulunuyor. Nasıl devam etmek istersiniz?")
+                msg_box.setInformativeText(
+                    f"Toplam {len(self.fixed_assignments)} kilitli tank var.\n\n"
+                    "• Tümünü Boşalt: Tüm tankları (kilitli dahil) boşaltır\n"
+                    "• Sadece Planlananları Boşalt: Sadece algoritma sonuçlarını boşaltır, kilitli tankları korur\n"
+                    "• İptal: İşlemi iptal eder"
+                )
+                
+                # Create custom buttons
+                clear_all_btn = msg_box.addButton("Tümünü Boşalt", QMessageBox.ButtonRole.AcceptRole)
+                clear_planned_btn = msg_box.addButton("Sadece Planlananları Boşalt", QMessageBox.ButtonRole.AcceptRole)
+                cancel_btn = msg_box.addButton("İptal", QMessageBox.ButtonRole.RejectRole)
+                msg_box.setDefaultButton(cancel_btn)
+                
+                reply = msg_box.exec()
+                
+                if reply == QMessageBox.StandardButton.Cancel or msg_box.clickedButton() == cancel_btn:
+                    return
+                elif msg_box.clickedButton() == clear_all_btn:
+                    # Clear all assignments and fixed assignments
+                    self.current_plan.assignments.clear()
+                    self.fixed_assignments.clear()
+                elif msg_box.clickedButton() == clear_planned_btn:
+                    # Only clear non-fixed assignments
+                    fixed_tank_ids = set(self.fixed_assignments.keys())
+                    for tank_id in list(self.current_plan.assignments.keys()):
+                        if tank_id not in fixed_tank_ids:
+                            self.current_plan.remove_assignment(tank_id)
+                    cleared_only_planned = True
+                else:
+                    return
+            else:
+                # No locked tanks - proceed with simple Yes/No confirmation
+                reply = QMessageBox.question(
+                    self,
+                    "Tüm Tankları Boşalt",
+                    "Tüm tank atamalarını temizlemek istediğinizden emin misiniz?\n\n"
+                    "Bu işlem geri alınamaz.",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                
+                if reply != QMessageBox.StandardButton.Yes:
+                    return
+                
                 # Clear all assignments and fixed assignments
                 self.current_plan.assignments.clear()
                 self.fixed_assignments.clear()
-            elif msg_box.clickedButton() == clear_planned_btn:
-                # Only clear non-fixed assignments
-                fixed_tank_ids = set(self.fixed_assignments.keys())
-                for tank_id in list(self.current_plan.assignments.keys()):
-                    if tank_id not in fixed_tank_ids:
-                        self.current_plan.remove_assignment(tank_id)
-                cleared_only_planned = True
-            else:
-                return
-        else:
-            # No locked tanks - proceed with simple Yes/No confirmation
-            reply = QMessageBox.question(
-                self,
-                "Tüm Tankları Boşalt",
-                "Tüm tank atamalarını temizlemek istediğinizden emin misiniz?\n\n"
-                "Bu işlem geri alınamaz.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
-            )
-            
-            if reply != QMessageBox.StandardButton.Yes:
-                return
-            
-            # Clear all assignments and fixed assignments
-            self.current_plan.assignments.clear()
-            self.fixed_assignments.clear()
         
         # Clear UNDO history when clearing all tanks
         self.last_tank_swap_state = None
         self.update_undo_menu_state()
         
-        # Update button states (this will show "Yükleme Planı Oluştur" again)
+        # Update button states
+        # Note: algorithm_buttons_disabled flag is NOT reset - stays as-is per requirement
         self.update_optimize_button_state()
         self.update_remaining_cargo_button_state()
         self.update_fill_100_button_state()
