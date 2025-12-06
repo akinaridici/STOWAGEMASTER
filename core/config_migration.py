@@ -145,3 +145,4 @@ class ConfigMigration:
                 }
         
         return config
+
