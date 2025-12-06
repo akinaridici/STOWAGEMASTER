@@ -1,3 +1,73 @@
 {
   "app": {
-    "environment": 
+    "environment": "development",
+    "debug_mode": false,
+    "log_level": "INFO",
+    "data_directory": null,
+    "backup_directory": null,
+    "log_directory": null,
+    "genetic_algorithm": {
+      "population_size": 500,
+      "max_generations": 2000,
+      "crossover_rate": 0.9,
+      "mutation_rate": 0.11,
+      "tournament_size": 3,
+      "use_elitism": true,
+      "elitism_count": 5,
+      "symmetry_penalty_coef": 3000.0,
+      "trim_penalty_coef": 1500.0,
+      "operational_penalty_coef": 100.0,
+      "receiver_tolerance": 0.03,
+      "convergence_threshold": 0.0001,
+      "convergence_generations": 60
+    },
+    "advanced_optimizer": {
+      "min_utilization": 0.65,
+      "drag_drop_warning_threshold": 0.7,
+      "faz1_single_tank_tolerance": 0.05,
+      "faz2_two_tank_tolerance": 0.05,
+      "faz2_asymmetric_tolerance_factor": 0.2,
+      "faz3_three_tank_tolerance": 0.04,
+      "faz4_four_tank_tolerance": 0.04,
+      "faz5_five_tank_tolerance": 0.04,
+      "faz6_six_tank_tolerance": 0.05,
+      "score_weights": {
+        "single_fit": 0.4,
+        "symmetry": 0.25,
+        "bow_stern": 0.15,
+        "best_fit": 0.2
+      },
+      "waste_utilization_weights": {
+        "waste": 0.7,
+        "utilization": 0.3
+      },
+      "exact_fit_threshold": 0.01,
+      "bow_stern_violation_threshold": 3,
+      "symmetric_pair_min_threshold": 0.65,
+      "mandatory_retry_increment": 0.01,
+      "mandatory_max_relaxation": 0.35
+    },
+    "ui": {
+      "auto_save_interval": 300,
+      "show_tooltips": true,
+      "animate_transitions": true,
+      "default_window_width": 1400,
+      "default_window_height": 800,
+      "remember_window_state": true,
+      "theme": "auto"
+    },
+    "validation": {
+      "min_tank_utilization": 0.65,
+      "max_cargo_quantity": 1000000.0,
+      "min_density": 0.01,
+      "max_density": 10.0,
+      "tank_name_max_length": 50,
+      "cargo_type_max_length": 100
+    },
+    "last_profile_id": null,
+    "recent_plans": [],
+    "optimization_algorithm": "genetic"
+  },
+  "version": "1.0",
+  "timestamp": "2025-12-06T23:58:36.469153"
+}

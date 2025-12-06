@@ -8,6 +8,11 @@ from enum import Enum
 class ProgressStage(Enum):
     """Enumeration of optimization stages"""
     INITIALIZING = "Initializing"
+    INITIALIZING_POPULATION = "Initializing population"
+    RUNNING_OPTIMIZATION = "Running optimization"
+    PLACING_MANDATORY = "Placing mandatory cargo"
+    FINALIZING_RESULTS = "Finalizing results"
+    POST_PROCESSING = "Post processing"
     VALIDATING = "Validating data"
     MANDATORY_PLACEMENT = "Placing mandatory cargo"
     PHASE_1 = "Single tank fitting"
