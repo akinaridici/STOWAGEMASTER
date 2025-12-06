@@ -63,6 +63,11 @@ class MainWindow(QMainWindow):
         self.charter_mode_enabled: bool = False  # Charter Mode toggle state
         self.algorithm_buttons_disabled: bool = False  # Sticky flag to keep algorithm buttons disabled
         
+        # Colorize state
+        self.original_cargo_colors: dict[str, str] = {}  # Store original cargo colors by unique_id
+        self.original_custom_colors: dict[str, Optional[str]] = {}  # Store original custom_color values
+        self.is_colorized: bool = False  # Track if currently colorized
+        
         self.init_ui()
         
         # Auto-load last profile if available
@@ -226,6 +231,16 @@ class MainWindow(QMainWindow):
         self.cargo_legend.color_changed.connect(self.on_cargo_color_changed)
         legend_button_layout.addWidget(self.cargo_legend, 1)  # Stretch factor 1
         
+        # "Colorize" button (right side, fixed size, left of %100 Yap)
+        self.colorize_btn = QPushButton("Colorize")
+        self.colorize_btn.setMinimumHeight(35)
+        self.colorize_btn.setMinimumWidth(100)
+        self.colorize_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
+        self.colorize_btn.setToolTip("Alıcı adının ilk 4 harfine göre gruplandırır ve renklendirir")
+        self.colorize_btn.pressed.connect(self.apply_colorize)
+        self.colorize_btn.released.connect(self.restore_colorize)
+        legend_button_layout.addWidget(self.colorize_btn)  # Fixed size on right
+        
         # "%100 Yap" button (right side, fixed size)
         self.fill_100_btn = QPushButton("%100 Yap")
         self.fill_100_btn.setMinimumHeight(35)
@@ -240,6 +255,7 @@ class MainWindow(QMainWindow):
         self.charter_mode_btn.setMinimumHeight(35)
         self.charter_mode_btn.setMinimumWidth(120)
         self.charter_mode_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
+        self.charter_mode_btn.setToolTip("Bu moda geçildiğinde algoritmik hesap iptal olur")
         self.charter_mode_btn.setCheckable(True)  # Make it a toggle button
         self.charter_mode_btn.setChecked(False)  # Initially unchecked
         self.charter_mode_btn.clicked.connect(self.toggle_charter_mode)
@@ -563,6 +579,8 @@ class MainWindow(QMainWindow):
         self.fixed_assignments.clear()
         self.last_tank_swap_state = None
         self.update_undo_menu_state()
+        # Reset colorize state when creating new plan
+        self._reset_colorize_state()
         
         # Generate colors for cargo types (check for custom colors)
         cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests) if self.current_plan else []
@@ -1854,6 +1872,139 @@ class MainWindow(QMainWindow):
         self.update_optimize_button_state()
         self.update_remaining_cargo_button_state()
     
+    def apply_colorize(self):
+        """Apply colorization based on receiver name prefixes"""
+        if not self.current_plan or not self.current_plan.cargo_requests:
+            return
+        
+        # Store original colors if not already stored
+        if not self.is_colorized:
+            self._store_original_colors()
+        
+        # Group cargos by first 4 characters of receiver names
+        groups = self._group_cargos_by_receiver_prefix()
+        
+        # Define color palette for first 5 groups
+        group_colors = [
+            "#FF0000",  # Red
+            "#0000FF",  # Blue
+            "#00FF00",  # Green
+            "#FFFF00",  # Yellow
+            "#FFA500"   # Orange
+        ]
+        
+        # Apply colors to cargos in first 5 groups
+        for group_index, (prefix, cargo_list) in enumerate(groups[:5]):
+            color = group_colors[group_index]
+            for cargo in cargo_list:
+                # Temporarily set custom_color (don't save to file)
+                cargo.custom_color = color
+        
+        # Refresh displays
+        self._refresh_colorized_displays()
+        
+        self.is_colorized = True
+    
+    def restore_colorize(self):
+        """Restore original colors"""
+        if not self.is_colorized or not self.current_plan:
+            return
+        
+        # Restore original custom_color values
+        for cargo in self.current_plan.cargo_requests:
+            cargo_id = cargo.unique_id
+            if cargo_id in self.original_custom_colors:
+                cargo.custom_color = self.original_custom_colors[cargo_id]
+            else:
+                # If not in stored colors, set to None (no custom color)
+                cargo.custom_color = None
+        
+        # Refresh displays
+        self._refresh_colorized_displays()
+        
+        self.is_colorized = False
+    
+    def _store_original_colors(self):
+        """Store original cargo colors before colorization"""
+        if not self.current_plan:
+            return
+        
+        self.original_cargo_colors.clear()
+        self.original_custom_colors.clear()
+        
+        # Generate current colors
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests)
+        
+        # Store original colors
+        for i, cargo in enumerate(self.current_plan.cargo_requests):
+            cargo_id = cargo.unique_id
+            # Store generated color
+            if i < len(cargo_colors):
+                self.original_cargo_colors[cargo_id] = cargo_colors[i]
+            # Store custom_color if exists
+            self.original_custom_colors[cargo_id] = cargo.custom_color
+    
+    def _group_cargos_by_receiver_prefix(self) -> list:
+        """Group cargos by first 4 characters of receiver names
+        
+        Returns:
+            List of tuples (prefix, cargo_list) sorted by prefix
+        """
+        if not self.current_plan:
+            return []
+        
+        # Dictionary to group cargos by prefix
+        prefix_groups = {}
+        
+        for cargo in self.current_plan.cargo_requests:
+            # Get first receiver name (or empty string if no receivers)
+            if cargo.receivers and len(cargo.receivers) > 0:
+                first_receiver_name = cargo.receivers[0].name
+                # Get first 4 characters (pad if shorter)
+                prefix = (first_receiver_name[:4] + "    ")[:4].upper()
+            else:
+                # No receiver - use special prefix
+                prefix = "NONE"
+            
+            if prefix not in prefix_groups:
+                prefix_groups[prefix] = []
+            prefix_groups[prefix].append(cargo)
+        
+        # Sort by prefix and return as list of tuples
+        sorted_groups = sorted(prefix_groups.items())
+        return sorted_groups
+    
+    def _refresh_colorized_displays(self):
+        """Refresh legend and tank card displays with current colors"""
+        if not self.current_plan or not self.current_ship:
+            return
+        
+        # Generate colors (will use custom_color if set)
+        cargo_colors = self._generate_colors(len(self.current_plan.cargo_requests), self.current_plan.cargo_requests)
+        
+        # Update legend
+        if hasattr(self, 'cargo_legend'):
+            self.cargo_legend.set_cargo_list(self.current_plan.cargo_requests, cargo_colors, self.current_plan)
+        
+        # Update plan viewer
+        if hasattr(self, 'plan_viewer'):
+            self.plan_viewer.display_plan(self.current_plan, self.current_ship, cargo_colors)
+        
+        # Update tank cards
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(100, lambda: self.display_tank_cards_in_panel(self.current_plan, self.current_ship))
+    
+    def _reset_colorize_state(self):
+        """Reset colorize state when plan changes"""
+        # If currently colorized, restore first
+        if self.is_colorized:
+            self.restore_colorize()
+        
+        # Clear stored colors
+        self.original_cargo_colors.clear()
+        self.original_custom_colors.clear()
+        self.is_colorized = False
+    
     def update_fill_100_button_state(self):
         """Update '%100 Yap' button enabled state"""
         if not hasattr(self, 'fill_100_btn'):
@@ -2101,6 +2252,8 @@ class MainWindow(QMainWindow):
                 self.fixed_assignments.clear()
                 self.last_tank_swap_state = None
                 self.update_undo_menu_state()
+                # Reset colorize state when loading new plan
+                self._reset_colorize_state()
                 # Load cargo requests
                 self.current_cargo_requests = plan.cargo_requests
                 self.cargo_input_widget.set_cargo_list(self.current_cargo_requests)
