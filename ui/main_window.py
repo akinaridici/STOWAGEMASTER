@@ -18,6 +18,12 @@ from ui.ship_profile_dialog import ShipProfileDialog
 from ui.cargo_input_dialog import CargoInputDialog
 from ui.plan_viewer import PlanViewer
 
+# Import new progress and configuration systems
+from core.config_manager import ConfigurationManager
+from core.config_migration import ConfigMigration
+from core.optimization_worker import OptimizationWorker
+from ui.progress_dialog import OptimizationProgressDialog
+
 
 class MainWindow(QMainWindow):
     """Main application window"""
@@ -25,15 +31,32 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.storage = StorageManager()
+        
+        # Initialize new configuration manager
+        self.config_manager = ConfigurationManager()
+        
+        # Try to migrate from old configuration format
+        try:
+            migration = ConfigMigration(self.config_manager)
+            migration.migrate_from_old_format()
+            print("Configuration migration completed successfully")
+        except Exception as e:
+            print(f"Configuration migration failed or not needed: {e}")
+        
+        # Load configuration using new system
+        self.config = self.config_manager.get_config()
+        
         self.current_ship: Optional[Ship] = None
         self.current_cargo_requests: list[Cargo] = []
         self.current_plan: Optional[StowagePlan] = None
         self.current_plan_file: Optional[str] = None  # Path to saved plan file, None if unsaved
         self.excluded_tanks: set[str] = set()  # Tank IDs excluded from planning
         self.last_tank_swap_state: Optional[dict] = None  # History for UNDO (drag-drop only)
-        self.optimization_settings = self.storage.load_optimization_settings()  # Load optimization settings
-        # Force algorithm to always be 'genetic' on startup (not saved between sessions)
-        self.optimization_settings['optimization_algorithm'] = 'genetic'
+        
+        # Use new configuration system instead of old settings
+        # Convert to dict for compatibility with existing code
+        self.optimization_settings = self.config.to_dict()
+        
         self.fixed_assignments: dict[str, TankAssignment] = {}  # Manual assignments that should be preserved
         
         self.init_ui()
@@ -703,17 +726,18 @@ class MainWindow(QMainWindow):
         # Check which optimization algorithm to use (from settings)
         algorithm = self.optimization_settings.get('optimization_algorithm', 'genetic')
         
-        # Set cursor to wait (hourglass) during optimization
-        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        # Create progress dialog
+        progress_dialog = OptimizationProgressDialog(self)
+        progress_dialog.setWindowTitle("Optimizasyon İlerlemesi")
         
         solutions = None
         try:
             if algorithm == 'genetic':
-                # Use Genetic Algorithm optimizer
-                from optimizer.genetic_optimizer import GeneticOptimizer
+                # Use Genetic Algorithm optimizer with progress
+                from optimizer.genetic_optimizer_with_progress import GeneticOptimizerWithProgress
                 
                 # Validate using GA validator with remaining cargos
-                is_valid, error_msg = GeneticOptimizer.validate_plan(
+                is_valid, error_msg = GeneticOptimizerWithProgress.validate_plan(
                     self.current_ship, cargo_requests_to_optimize
                 )
                 
@@ -721,17 +745,26 @@ class MainWindow(QMainWindow):
                     QMessageBox.critical(self, "Hata", error_msg)
                     return
                 
-                # Create GA optimizer with remaining cargos and fixed assignments
-                ga_optimizer = GeneticOptimizer(
+                # Create GA optimizer with progress reporter
+                ga_optimizer = GeneticOptimizerWithProgress(
                     self.current_ship,
                     cargo_requests_to_optimize,
                     excluded_tanks=combined_excluded_tanks if combined_excluded_tanks else None,
                     fixed_assignments=manual_assignments if manual_assignments else None,
-                    settings=self.optimization_settings
+                    settings=self.optimization_settings,
+                    progress_reporter=progress_dialog
                 )
                 
-                # Run optimization
+                # Show progress dialog
+                progress_dialog.show()
+                
+                # Run optimization with progress reporting
                 best_plan = ga_optimizer.optimize()
+                
+                # Check if optimization was cancelled
+                if progress_dialog.was_cancelled():
+                    QMessageBox.information(self, "İptal Edildi", "Optimizasyon kullanıcı tarafından iptal edildi.")
+                    return
                 
                 # STEP 4: Merge algorithm results with manual assignments
                 if manual_assignments:
@@ -746,18 +779,28 @@ class MainWindow(QMainWindow):
                 score = StowageOptimizer.score_plan(best_plan, self.current_ship)
                 solutions = [(best_plan, score, "Genetik Algoritma")]
             else:
-                # Use advanced optimizer with retry mechanism (default)
-                from optimizer.advanced_optimizer import AdvancedStowageOptimizer
+                # Use advanced optimizer with progress
+                from optimizer.advanced_optimizer_with_progress import AdvancedStowageOptimizerWithProgress
                 
-                # Generate plan using advanced optimizer with multiple retries
-                best_plan = AdvancedStowageOptimizer.optimize_with_fixed_and_retry(
+                # Create advanced optimizer with progress reporter
+                advanced_optimizer = AdvancedStowageOptimizerWithProgress(progress_reporter=progress_dialog)
+                
+                # Show progress dialog
+                progress_dialog.show()
+                
+                # Generate plan using advanced optimizer with progress reporting
+                best_plan = advanced_optimizer.optimize_advanced(
                     self.current_ship,
                     cargo_requests_to_optimize,
                     excluded_tanks=combined_excluded_tanks if combined_excluded_tanks else None,
                     fixed_assignments=manual_assignments if manual_assignments else None,
-                    num_retries=5,
                     settings=self.optimization_settings
                 )
+                
+                # Check if optimization was cancelled
+                if progress_dialog.was_cancelled():
+                    QMessageBox.information(self, "İptal Edildi", "Optimizasyon kullanıcı tarafından iptal edildi.")
+                    return
                 
                 # STEP 4: Merge algorithm results with manual assignments
                 if manual_assignments:
@@ -772,8 +815,8 @@ class MainWindow(QMainWindow):
                 score = StowageOptimizer.score_plan(best_plan, self.current_ship)
                 solutions = [(best_plan, score, "Gelişmiş Algoritma")]
         finally:
-            # Restore normal cursor
-            QApplication.restoreOverrideCursor()
+            # Close progress dialog
+            progress_dialog.close()
         
         if not solutions:
             QMessageBox.critical(self, "Hata", "Hiçbir çözüm üretilemedi.")
@@ -1876,6 +1919,7 @@ class MainWindow(QMainWindow):
         """Open optimization settings dialog"""
         from ui.optimization_settings_dialog import OptimizationSettingsDialog
         
+        # Use new configuration system
         dialog = OptimizationSettingsDialog(self, self.optimization_settings)
         if dialog.exec():
             # Get new settings
@@ -1886,21 +1930,28 @@ class MainWindow(QMainWindow):
             # Add to settings for current session (will reset to 'genetic' on next startup)
             new_settings['optimization_algorithm'] = selected_algorithm
             
-            # Save settings (algorithm selection is included but will be ignored on next startup)
-            if self.storage.save_optimization_settings(new_settings):
-                self.optimization_settings = new_settings
-                # Note: algorithm selection is in settings for this session, but will reset to 'genetic' on next startup
+            # Update configuration using new system
+            try:
+                # Update configuration
+                self.config_manager.update_config(new_settings)
+                
+                # Reload configuration
+                self.config = self.config_manager.get_config()
+                
+                # Update optimization_settings for compatibility
+                self.optimization_settings = self.config.to_dict()
+                
                 QMessageBox.information(
                     self,
                     "Ayarlar Kaydedildi",
                     "Optimizasyon ayarları başarıyla kaydedildi."
                 )
                 # No automatic re-planning - user can manually trigger planning if needed
-            else:
+            except Exception as e:
                 QMessageBox.critical(
                     self,
                     "Hata",
-                    "Ayarlar kaydedilirken bir hata oluştu."
+                    f"Ayarlar kaydedilirken bir hata oluştu: {str(e)}"
                 )
     
     def show_help(self):

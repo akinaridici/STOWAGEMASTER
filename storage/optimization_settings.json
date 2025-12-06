@@ -35,5 +35,8 @@
   "ga_receiver_tolerance": 0.03,
   "ga_convergence_threshold": 0.0001,
   "ga_convergence_generations": 60,
-  "last_profile_id": "a62cfb23-9d8e-4fc3-a663-ddb68c791437"
+  "last_profile_id": "a62cfb23-9d8e-4fc3-a663-ddb68c791437",
+  "recent_plans": [
+    "__VOY19_25.json"
+  ]
 }
