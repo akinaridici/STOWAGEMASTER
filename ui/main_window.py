@@ -23,6 +23,8 @@ from core.config_manager import ConfigurationManager
 from core.config_migration import ConfigMigration
 from core.optimization_worker import OptimizationWorker
 from ui.progress_dialog import OptimizationProgressDialog
+from core.report_generator import ASCIIReportGenerator
+from ui.report_dialog import ReportDialog
 
 
 class MainWindow(QMainWindow):
@@ -212,6 +214,10 @@ class MainWindow(QMainWindow):
         help_menu = menubar.addMenu('Yardım')
         help_menu.addAction('Kullanım Kılavuzu', self.show_help)
         help_menu.addAction('Hakkında', self.show_about)
+
+        # Report menu
+        report_menu = menubar.addMenu('Rapor')
+        report_menu.addAction('Rapor Oluştur (ASCII)', self.show_report_dialog)
     
     def create_top_panel(self) -> QWidget:
         """Create top control panel with cargo legend and ship schematic"""
@@ -220,7 +226,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(5, 5, 5, 5)  # Reduce margins
         layout.setSpacing(5)  # Reduce spacing between widgets
         
-        # Cargo legend and button in same row
+        # Cargo legend and button column in same row
         legend_button_layout = QHBoxLayout()
         legend_button_layout.setSpacing(10)
         
@@ -231,26 +237,12 @@ class MainWindow(QMainWindow):
         self.cargo_legend.color_changed.connect(self.on_cargo_color_changed)
         legend_button_layout.addWidget(self.cargo_legend, 1)  # Stretch factor 1
         
-        # "Colorize" button (right side, fixed size, left of %100 Yap)
-        self.colorize_btn = QPushButton("Colorize")
-        self.colorize_btn.setMinimumHeight(35)
-        self.colorize_btn.setMinimumWidth(100)
-        self.colorize_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
-        self.colorize_btn.setToolTip("Alıcı adının ilk 4 harfine göre gruplandırır ve renklendirir")
-        self.colorize_btn.pressed.connect(self.apply_colorize)
-        self.colorize_btn.released.connect(self.restore_colorize)
-        legend_button_layout.addWidget(self.colorize_btn)  # Fixed size on right
+        # Right-side button column (stacked, aligned to top-right)
+        buttons_layout = QVBoxLayout()
+        buttons_layout.setSpacing(6)
+        buttons_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
         
-        # "%100 Yap" button (right side, fixed size)
-        self.fill_100_btn = QPushButton("%100 Yap")
-        self.fill_100_btn.setMinimumHeight(35)
-        self.fill_100_btn.setMinimumWidth(100)
-        self.fill_100_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
-        self.fill_100_btn.clicked.connect(self.fill_tanks_to_100_percent)
-        self.fill_100_btn.setEnabled(False)  # Initially disabled
-        legend_button_layout.addWidget(self.fill_100_btn)  # Fixed size on right
-        
-        # "Charterer Mode" button (right side, fixed size, next to %100 Yap)
+        # "Charterer Mode" button (top of stack)
         self.charter_mode_btn = QPushButton("Charterer Mode")
         self.charter_mode_btn.setMinimumHeight(35)
         self.charter_mode_btn.setMinimumWidth(120)
@@ -259,7 +251,28 @@ class MainWindow(QMainWindow):
         self.charter_mode_btn.setCheckable(True)  # Make it a toggle button
         self.charter_mode_btn.setChecked(False)  # Initially unchecked
         self.charter_mode_btn.clicked.connect(self.toggle_charter_mode)
-        legend_button_layout.addWidget(self.charter_mode_btn)  # Fixed size on right
+        buttons_layout.addWidget(self.charter_mode_btn)
+        
+        # "Colorize" button (middle of stack)
+        self.colorize_btn = QPushButton("Colorize")
+        self.colorize_btn.setMinimumHeight(35)
+        self.colorize_btn.setMinimumWidth(100)
+        self.colorize_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
+        self.colorize_btn.setToolTip("Alıcı adının ilk 4 harfine göre gruplandırır ve renklendirir")
+        self.colorize_btn.pressed.connect(self.apply_colorize)
+        self.colorize_btn.released.connect(self.restore_colorize)
+        buttons_layout.addWidget(self.colorize_btn)
+        
+        # "%100 Yap" button (bottom of stack)
+        self.fill_100_btn = QPushButton("%100 Yap")
+        self.fill_100_btn.setMinimumHeight(35)
+        self.fill_100_btn.setMinimumWidth(100)
+        self.fill_100_btn.setStyleSheet("font-size: 10pt; font-weight: bold; color: #000000;")
+        self.fill_100_btn.clicked.connect(self.fill_tanks_to_100_percent)
+        self.fill_100_btn.setEnabled(False)  # Initially disabled
+        buttons_layout.addWidget(self.fill_100_btn)
+        
+        legend_button_layout.addLayout(buttons_layout)
         
         layout.addLayout(legend_button_layout)
         
@@ -698,6 +711,16 @@ class MainWindow(QMainWindow):
         # Update button states
         self.update_remaining_cargo_button_state()
         self.update_fill_100_button_state()
+    
+    def show_report_dialog(self):
+        """Show ASCII report dialog"""
+        if not self.current_plan or not self.current_ship:
+             QMessageBox.warning(self, "Uyarı", "Rapor oluşturmak için önce bir plan oluşturmalısınız.")
+             return
+             
+        report_text = ASCIIReportGenerator.generate_report(self.current_plan, self.current_ship)
+        dialog = ReportDialog(report_text, self)
+        dialog.exec()
     
     def create_optimized_plan(self):
         """Create optimized stowage plan"""

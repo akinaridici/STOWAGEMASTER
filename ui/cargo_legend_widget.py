@@ -1,7 +1,7 @@
 """Widget for displaying cargo legend with drag-and-drop support"""
 
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QScrollArea,
-                             QFrame, QVBoxLayout, QMenu)
+                             QFrame, QVBoxLayout, QMenu, QSizePolicy)
 from PyQt6.QtCore import Qt, QMimeData, QByteArray, pyqtSignal
 from PyQt6.QtGui import QDrag, QPixmap, QPainter, QColor, QFont
 import json
@@ -288,15 +288,17 @@ class CargoLegendWidget(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setMinimumHeight(80)
-        scroll_area.setMaximumHeight(80)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setMinimumHeight(100)  # Give legend more vertical room
+        scroll_area.setMaximumHeight(180)  # Cap to avoid overtaking the schematic
+        scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         
         # Container widget for cards
         self.cards_container = QWidget()
         self.cards_layout = QHBoxLayout(self.cards_container)
         self.cards_layout.setSpacing(10)
         self.cards_layout.setContentsMargins(5, 5, 5, 5)
+        self.cards_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.cards_layout.addStretch()  # Add stretch at end
         
         scroll_area.setWidget(self.cards_container)
@@ -329,6 +331,9 @@ class CargoLegendWidget(QWidget):
             
             card = DraggableCargoCard(cargo, color, self, loaded_qty)
             self.cards_layout.insertWidget(self.cards_layout.count() - 1, card)  # Insert before stretch
+
+        # Adjust legend area height so cards are never clipped
+        self._adjust_scroll_height(len(cargo_list))
     
     def _clear_cards(self):
         """Clear all cargo cards"""
@@ -339,6 +344,19 @@ class CargoLegendWidget(QWidget):
                 widget = item.widget()
                 if widget:
                     widget.deleteLater()
+
+    def _adjust_scroll_height(self, cargo_count: int):
+        """Resize scroll area to fit legend without clipping while keeping a reasonable cap."""
+        base_height = 100
+        # Add extra room for additional rows; cap at the scroll area's maximum height.
+        extra = 0
+        if cargo_count > 4:
+            extra = 20
+        if cargo_count > 8:
+            extra = 40
+        target = min(base_height + extra, 180)
+        self.scroll_area.setMinimumHeight(target)
+        self.scroll_area.setMaximumHeight(180)
     
     def update_loaded_quantities(self, plan):
         """Update loaded quantities for all cargo cards

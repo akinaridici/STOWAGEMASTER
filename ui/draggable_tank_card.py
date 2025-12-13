@@ -272,8 +272,8 @@ class DraggableTankCard(QGroupBox):
             # Accept both tank-to-tank swaps and cargo-to-tank drops
             if (event.mimeData().hasFormat("application/x-tank-assignment") or 
                 event.mimeData().hasFormat("application/x-cargo-id")):
-                # Don't accept if tank is planned
-                if self.is_planned:
+                # Don't accept if tank is planned or excluded
+                if self.is_planned or self.is_excluded:
                     event.ignore()
                 # Don't accept if tank is fixed (locked after "Plan Remaining Cargos")
                 elif self.is_fixed:
@@ -292,8 +292,8 @@ class DraggableTankCard(QGroupBox):
             # Accept both tank-to-tank swaps and cargo-to-tank drops
             if (event.mimeData().hasFormat("application/x-tank-assignment") or 
                 event.mimeData().hasFormat("application/x-cargo-id")):
-                # Don't accept if tank is planned
-                if self.is_planned:
+                # Don't accept if tank is planned or excluded
+                if self.is_planned or self.is_excluded:
                     event.ignore()
                 # Don't accept if tank is fixed (locked after "Plan Remaining Cargos")
                 elif self.is_fixed:
@@ -314,8 +314,8 @@ class DraggableTankCard(QGroupBox):
                 event.ignore()
                 return
             
-            # Don't accept if tank is planned
-            if self.is_planned:
+            # Don't accept if tank is planned or excluded
+            if self.is_planned or self.is_excluded:
                 event.ignore()
                 return
             
